@@ -3,7 +3,6 @@ package com.example.demo.service;
 import com.example.demo.auth.RegisterRequest;
 import com.example.demo.domain.User;
 import com.example.demo.repository.UserRepository;
-import com.example.demo.auth.LoginRequest; // LoginRequest import 추가
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -11,16 +10,15 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import com.example.demo.auth.LoginRequest; // 필요한 import 추가
 
 @Service
 public class UserService implements UserDetailsService {
 
     private final UserRepository userRepository;
-    // SecurityConfig의 passwordEncoder 빈을 직접 주입받습니다.
     private final BCryptPasswordEncoder passwordEncoder; 
 
-    // 생성자 주입 (순환 참조 문제 해결)
-    // Spring이 UserRepository와 BCryptPasswordEncoder 빈을 찾아서 여기에 넣어줍니다.
+    // 순환 참조 방지를 위한 생성자 주입
     public UserService(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -28,32 +26,34 @@ public class UserService implements UserDetailsService {
     
     // --- 회원가입 로직 ---
     public User registerUser(RegisterRequest request) {
-        if (userRepository.findByUsername(request.getUsername()) != null) {
-            throw new RuntimeException("Username already exists.");
+        // 이메일 중복 검사
+        if (userRepository.findByEmail(request.getEmail()) != null) {
+            throw new RuntimeException("Email already exists.");
         }
 
         String encodedPassword = passwordEncoder.encode(request.getPassword());
 
         User newUser = new User();
-        // 참고: DB 컬럼명에 맞게 user_name 대신 username 필드를 사용합니다.
-        // User 엔티티의 @Column(name="user_name") 설정이 이 문제를 해결합니다.
-        newUser.setUsername(request.getUsername()); 
-        newUser.setPassword(encodedPassword);
+        // **수정된 필드명과 Getter를 사용합니다.**
+        // RegisterRequest에 있는 getUserName()과 setUserName() 매핑
+        newUser.setUserName(request.getUserName()); 
         newUser.setEmail(request.getEmail());
+        newUser.setPhoneNumber(request.getPhoneNumber());
+        newUser.setPassword(encodedPassword);
 
         return userRepository.save(newUser);
     }
     
     // --- Spring Security가 사용자 정보를 로드할 때 호출됨 ---
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username);
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        User user = userRepository.findByEmail(email);
         if (user == null) {
-            throw new UsernameNotFoundException("User not found with username: " + username);
+            throw new UsernameNotFoundException("User not found with email: " + email);
         }
-
+        
         return new org.springframework.security.core.userdetails.User(
-            user.getUsername(),
+            user.getEmail(),
             user.getPassword(),
             new ArrayList<>()
         );
@@ -61,9 +61,9 @@ public class UserService implements UserDetailsService {
     
     // --- 로그인 처리 로직 ---
     public String login(String username, String rawPassword) {
-        UserDetails userDetails = loadUserByUsername(username);
+        // username(email)로 사용자 정보를 로드합니다.
+        UserDetails userDetails = loadUserByUsername(username); 
         
-        // 데이터베이스의 암호화된 비밀번호와 요청된 비밀번호를 비교
         if (passwordEncoder.matches(rawPassword, userDetails.getPassword())) {
             return "SUCCESS";
         } else {
