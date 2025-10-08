@@ -1,35 +1,61 @@
 package com.example.demo.auth;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.domain.User;
-import com.example.demo.dto.UserResponseDto; // 방금 만든 응답용 DTO
+import com.example.demo.dto.UserResponseDto;
 import com.example.demo.service.UserService;
 
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    private final UserService userService; // 생성자 주입 방식으로 변경
-    public AuthController(UserService userService) {
+    private final UserService userService;
+    private final AuthenticationManager authenticationManager;
+
+    public AuthController(UserService userService, AuthenticationManager authenticationManager) {
         this.userService = userService;
-}
+        this.authenticationManager = authenticationManager;
+    }
+
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest request) { // 와일드카드 <?> 사용
+    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         try {
             User registeredUser = userService.registerUser(request);
-            // 비밀번호가 제외된 DTO를 만들어서 응답으로 보냄
             UserResponseDto responseDto = new UserResponseDto(registeredUser);
             return ResponseEntity.ok(responseDto);
         } catch (RuntimeException e) {
-            // 실패 시 오류 메시지를 응답 본문에 담아 보냄
-            return ResponseEntity
-                    .badRequest()
-                    .body(e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+            );
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            return ResponseEntity.ok().body("Login Successful!");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Login failed: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
+            return ResponseEntity.status(401).body("Not authenticated");
+        }
+        return ResponseEntity.ok(authentication.getName());
     }
 }

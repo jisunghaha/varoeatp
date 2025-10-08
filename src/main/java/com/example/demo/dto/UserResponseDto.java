@@ -2,9 +2,10 @@ package com.example.demo.dto;
 
 import com.example.demo.domain.User;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-// 비밀번호 등 민감한 정보를 제외하고 응답하기 위한 DTO
 @Getter
+@NoArgsConstructor
 public class UserResponseDto {
     private Long id;
     private String userName;
@@ -12,7 +13,7 @@ public class UserResponseDto {
     private String phoneNumber;
 
     public UserResponseDto(User user) {
-        this.id = user.getId(); // User 엔티티에 getId()가 있다고 가정
+        this.id = user.getId();
         this.userName = user.getUserName();
         this.email = user.getEmail();
         this.phoneNumber = user.getPhoneNumber();

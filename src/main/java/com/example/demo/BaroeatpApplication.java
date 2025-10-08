@@ -14,9 +14,4 @@ public class BaroeatpApplication {
         SpringApplication.run(BaroeatpApplication.class, args);
     }
 
-    // 👇 여기에 PasswordEncoder Bean을 직접 추가합니다!
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
 }
