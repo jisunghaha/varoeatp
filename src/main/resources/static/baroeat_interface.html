@@ -62,10 +62,11 @@
             const authButtons = currentUser
                 ? `<div class="flex items-center space-x-4">
                        <span class="font-medium text-gray-700">${currentUser}님</span>
+                       <button onclick="handleNavigate('mypage')" class="bg-gray-200 text-gray-600 px-3 py-1 rounded-full text-sm font-semibold hover:bg-gray-300">마이페이지</button>
                        <button onclick="handleLogout()" class="bg-gray-200 text-gray-600 px-3 py-1 rounded-full text-sm font-semibold hover:bg-gray-300">로그아웃</button>
                    </div>`
                 : `<button onclick="handleNavigate('login')" class="bg-orange-500 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-orange-600">로그인 / 가입</button>`;
-            
+
             headerContainer.innerHTML = `
                 <div class="sticky top-0 z-50 bg-white shadow-md">
                     <div class="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -77,7 +78,7 @@
                     </div>
                 </div>`;
         }
-        
+
         function renderView() {
             switch (currentView) {
                 case 'home':
@@ -122,11 +123,23 @@
                             </div>
                         </div>`;
                     break;
+                case 'mypage':
+                    viewContainer.innerHTML = `
+                        <div class="container mx-auto px-4 py-8">
+                            <section class="text-center py-24 bg-white rounded-xl shadow-lg">
+                                <h1 class="text-5xl font-extrabold mb-4 text-orange-600">마이페이지</h1>
+                                <p class="text-lg text-gray-600 mb-8">마이페이지에 오신 것을 환영합니다. 이 공간을 자유롭게 꾸며보세요!</p>
+                                </section>
+                        </div>`;
+                    break;
             }
         }
-        
+
         async function render() {
-            await checkLoginStatus();
+            // 페이지를 새로고침하거나 직접 URL로 들어왔을 때 로그인 상태를 확인
+            if (currentUser === null) {
+                await checkLoginStatus();
+            }
             renderHeader();
             renderView();
         }
@@ -148,22 +161,29 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password })
                 });
+
                 if (response.ok) {
-                    alert('로그인 성공!');
+                    // 서버로부터 받은 사용자 이름을 currentUser에 즉시 저장
+                    currentUser = await response.text();
                     handleNavigate('home');
                 } else {
+                    const errorText = await response.text();
+                    console.error("Login failed:", errorText);
                     msgEl.textContent = '로그인 실패. 정보를 확인하세요.';
                 }
-            } catch (e) { msgEl.textContent = '오류 발생.'; }
+            } catch (e) { 
+                console.error("Error during login:", e);
+                msgEl.textContent = '오류 발생.'; 
+            }
         }
-        
+
         async function handleLogout() {
             await fetch(`${apiUrl}/logout`, { method: 'POST' });
             alert('로그아웃 되었습니다.');
             currentUser = null;
             handleNavigate('home');
         }
-        
+
         async function handleBackendSignup() {
              const signupData = {
                 userName: document.getElementById('signup-user-name').value,
@@ -187,6 +207,7 @@
             } catch (e) { msgEl.textContent = '오류 발생.'; }
         }
 
+        // 초기 페이지 로드
         render();
     </script>
 </body>

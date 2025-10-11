@@ -45,7 +45,8 @@ public class AuthController {
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
             );
             SecurityContextHolder.getContext().setAuthentication(authentication);
-            return ResponseEntity.ok().body("Login Successful!");
+            // 성공 시 사용자 이름을 반환하도록 수정
+            return ResponseEntity.ok(authentication.getName());
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Login failed: " + e.getMessage());
         }
