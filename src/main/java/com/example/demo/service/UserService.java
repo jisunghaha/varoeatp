@@ -68,4 +68,20 @@ public class UserService implements UserDetailsService {
             throw new RuntimeException("Invalid credentials");
         }
     }
+
+    // --- 회원 탈퇴 로직 ---
+    public void deleteUser(String email, String rawPassword) {
+        // 이메일로 사용자 정보를 로드합니다.
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            throw new UsernameNotFoundException("User not found with email: " + email);
+        }
+
+        // 입력된 비밀번호가 저장된 비밀번호와 일치하는지 확인합니다.
+        if (passwordEncoder.matches(rawPassword, user.getPassword())) {
+            userRepository.delete(user);
+        } else {
+            throw new RuntimeException("Invalid credentials");
+        }
+    }
 }

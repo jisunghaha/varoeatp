@@ -1,8 +1,19 @@
-# Application configuration (º¸¾È»ó ¹Î°¨ÇÑ Á¤º¸)
+# Application configuration (ï¿½ï¿½ï¿½È»ï¿½ ï¿½Î°ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
 /src/main/resources/application.properties
 /src/main/resources/application-dev.properties
 /src/main/resources/application-prod.properties
-# ... ¶Ç´Â YAML ÆÄÀÏ
+# ... ï¿½Ç´ï¿½ YAML ï¿½ï¿½ï¿½ï¿½
 /src/main/resources/application.yml
 /src/main/resources/application-dev.yml
 /src/main/resources/application-prod.yml
+application.properties
+# ë¹Œë“œ ê²°ê³¼ë¬¼ ë¬´ì‹œ
+/target/
+
+# IDE ì„¤ì • íŒŒì¼ ë¬´ì‹œ
+.settings/
+.project
+.classpath
+
+# ë¯¼ê° ì •ë³´ íŒŒì¼ ë¬´ì‹œ
+application-oauth.properties

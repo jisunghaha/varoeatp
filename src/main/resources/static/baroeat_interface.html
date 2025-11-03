@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>바로잇 - 최종 완성본</title>
+    <title>바로잇 </title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @keyframes bounce-gentle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
@@ -43,12 +43,13 @@
         </footer>
     </div>
 
-    <script>
+   <script>
         let currentView = 'home';
         let currentUser = null;
         const headerContainer = document.getElementById('header-container');
         const viewContainer = document.getElementById('view-container');
         const apiUrl = '/api/auth';
+        const userApiUrl = '/user';
 
         function handleNavigate(page) {
             currentView = page;
@@ -61,10 +62,10 @@
             }
             const authButtons = currentUser
                 ? `<div class="flex items-center space-x-4">
-                       <span class="font-medium text-gray-700">${currentUser}님</span>
-                       <button onclick="handleNavigate('mypage')" class="bg-gray-200 text-gray-600 px-3 py-1 rounded-full text-sm font-semibold hover:bg-gray-300">마이페이지</button>
-                       <button onclick="handleLogout()" class="bg-gray-200 text-gray-600 px-3 py-1 rounded-full text-sm font-semibold hover:bg-gray-300">로그아웃</button>
-                   </div>`
+                        <span class="font-medium text-gray-700">${currentUser}님</span>
+                        <button onclick="handleNavigate('mypage')" class="bg-gray-200 text-gray-600 px-3 py-1 rounded-full text-sm font-semibold hover:bg-gray-300">마이페이지</button>
+                        <button onclick="handleLogout()" class="bg-gray-200 text-gray-600 px-3 py-1 rounded-full text-sm font-semibold hover:bg-gray-300">로그아웃</button>
+                    </div>`
                 : `<button onclick="handleNavigate('login')" class="bg-orange-500 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-orange-600">로그인 / 가입</button>`;
 
             headerContainer.innerHTML = `
@@ -95,12 +96,22 @@
                         <div class="container mx-auto py-16 max-w-md">
                             <div class="bg-white p-8 rounded-xl shadow-lg">
                                 <h2 class="text-3xl font-bold mb-6 text-center text-orange-600">로그인</h2>
-                                <div class="space-y-6">
+                                <div class="space-y-4">
                                     <input type="email" id="login-email" placeholder="이메일 (아이디)" class="w-full p-3 border rounded-lg">
                                     <input type="password" id="login-password" placeholder="비밀번호" class="w-full p-3 border rounded-lg">
                                     <button onclick="handleBackendLogin()" class="w-full bg-orange-500 text-white p-3 rounded-lg font-bold hover:bg-orange-600">로그인</button>
                                     <p id="login-message" class="text-center text-sm text-red-500 h-4"></p>
-                                    <div class="text-center text-sm">
+                                    <div class="flex flex-col space-y-3 pt-4">
+                                        <a href="/oauth2/authorization/google" class="w-full flex items-center justify-center p-3 rounded-lg border border-gray-300 hover:bg-gray-50">
+                                            <img src="https://developers.google.com/identity/images/g-logo.png" class="w-5 h-5 mr-3" alt="Google logo">
+                                            <span class="font-semibold text-gray-700">Google로 로그인</span>
+                                        </a>
+                                        <a href="/oauth2/authorization/kakao" class="w-full flex items-center justify-center p-3 rounded-lg bg-[#FEE500] hover:bg-yellow-400">
+                                            <img src="https://developers.kakao.com/tool/resource/static/img/button/kakaotalk.png" class="w-5 h-5 mr-3" alt="Kakao logo">
+                                            <span class="font-semibold text-[#3A1D1D]">카카오 로그인</span>
+                                        </a>
+                                    </div>
+                                    <div class="text-center text-sm pt-4">
                                         <button class="text-gray-500 hover:text-orange-500" onclick="handleNavigate('signup')">아직 계정이 없으신가요? 회원가입</button>
                                     </div>
                                 </div>
@@ -110,33 +121,44 @@
                 case 'signup':
                     viewContainer.innerHTML = `
                         <div class="container mx-auto py-16 max-w-md">
-                             <div class="bg-white p-8 rounded-xl shadow-lg">
-                                <h2 class="text-3xl font-bold mb-6 text-center text-orange-600">회원가입</h2>
-                                <div class="space-y-4">
-                                    <input type="text" id="signup-user-name" placeholder="이름" class="w-full p-3 border rounded-lg">
-                                    <input type="email" id="signup-email" placeholder="이메일 (아이디)" class="w-full p-3 border rounded-lg">
-                                    <input type="tel" id="signup-phone-number" placeholder="휴대폰 번호" class="w-full p-3 border rounded-lg">
-                                    <input type="password" id="signup-password" placeholder="비밀번호" class="w-full p-3 border rounded-lg">
-                                    <button onclick="handleBackendSignup()" class="w-full bg-orange-500 text-white p-3 rounded-lg font-bold hover:bg-orange-600">회원가입 완료</button>
-                                    <p id="signup-message" class="text-center text-sm text-red-500 h-4"></p>
+                                <div class="bg-white p-8 rounded-xl shadow-lg">
+                                    <h2 class="text-3xl font-bold mb-6 text-center text-orange-600">회원가입</h2>
+                                    <div class="space-y-4">
+                                        <input type="text" id="signup-user-name" placeholder="이름" class="w-full p-3 border rounded-lg">
+                                        <input type="email" id="signup-email" placeholder="이메일 (아이디)" class="w-full p-3 border rounded-lg">
+                                        <input type="tel" id="signup-phone-number" placeholder="휴대폰 번호" class="w-full p-3 border rounded-lg">
+                                        <input type="password" id="signup-password" placeholder="비밀번호" class="w-full p-3 border rounded-lg">
+                                        <button onclick="handleBackendSignup()" class="w-full bg-orange-500 text-white p-3 rounded-lg font-bold hover:bg-orange-600">회원가입 완료</button>
+                                        <p id="signup-message" class="text-center text-sm text-red-500 h-4"></p>
+                                    </div>
                                 </div>
-                            </div>
                         </div>`;
                     break;
                 case 'mypage':
                     viewContainer.innerHTML = `
-                        <div class="container mx-auto px-4 py-8">
-                            <section class="text-center py-24 bg-white rounded-xl shadow-lg">
-                                <h1 class="text-5xl font-extrabold mb-4 text-orange-600">마이페이지</h1>
-                                <p class="text-lg text-gray-600 mb-8">마이페이지에 오신 것을 환영합니다. 이 공간을 자유롭게 꾸며보세요!</p>
-                                </section>
+                        <div class="container mx-auto px-4 py-8 max-w-2xl">
+                            <div class="bg-white p-8 rounded-xl shadow-lg">
+                                <h1 class="text-3xl font-bold mb-2 text-gray-800">마이페이지</h1>
+                                <p class="text-gray-600 mb-8">안녕하세요, <span class="font-semibold text-orange-600">${currentUser}</span>님!</p>
+                                <div class="border-t pt-6">
+                                    <h2 class="text-xl font-semibold text-red-600 mb-3">회원 탈퇴</h2>
+                                    <p class="text-sm text-gray-500 mb-4">
+                                        회원 탈퇴를 원하시면, 본인 확인을 위해 현재 비밀번호를 입력해주세요.<br>
+                                        탈퇴 시 모든 정보는 즉시 삭제되며 복구할 수 없습니다.
+                                    </p>
+                                    <div class="space-y-4">
+                                        <input type="password" id="withdraw-password" placeholder="현재 비밀번호를 입력하세요" class="w-full p-3 border rounded-lg">
+                                        <button onclick="handleWithdrawal()" class="w-full bg-red-600 text-white p-3 rounded-lg font-bold hover:bg-red-700">회원 탈퇴하기</button>
+                                        <p id="withdraw-message" class="text-center text-sm text-red-500 h-4"></p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>`;
                     break;
             }
         }
 
         async function render() {
-            // 페이지를 새로고침하거나 직접 URL로 들어왔을 때 로그인 상태를 확인
             if (currentUser === null) {
                 await checkLoginStatus();
             }
@@ -145,10 +167,23 @@
         }
 
         async function checkLoginStatus() {
+            console.log("1. checkLoginStatus 함수가 실행되었습니다.");
             try {
                 const response = await fetch(`${apiUrl}/me`);
-                currentUser = response.ok ? await response.text() : null;
-            } catch (e) { currentUser = null; }
+                console.log("2. 서버로부터 응답을 받았습니다:", response);
+
+                if (response.ok) {
+                    const responseText = await response.text();
+                    console.log("3. 로그인 상태입니다. 서버 응답:", responseText);
+                    currentUser = responseText;
+                } else {
+                    console.log("3. 로그인되지 않은 상태입니다. 상태 코드:", response.status);
+                    currentUser = null;
+                }
+            } catch (e) {
+                console.error("4. fetch 함수 실행 중 심각한 오류가 발생했습니다:", e);
+                currentUser = null;
+            }
         }
 
         async function handleBackendLogin() {
@@ -161,9 +196,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password })
                 });
-
                 if (response.ok) {
-                    // 서버로부터 받은 사용자 이름을 currentUser에 즉시 저장
                     currentUser = await response.text();
                     handleNavigate('home');
                 } else {
@@ -207,8 +240,36 @@
             } catch (e) { msgEl.textContent = '오류 발생.'; }
         }
 
+        async function handleWithdrawal() {
+            const password = document.getElementById('withdraw-password').value;
+            const msgEl = document.getElementById('withdraw-message');
+            if (!password) {
+                msgEl.textContent = '비밀번호를 입력해주세요.';
+                return;
+            }
+            if (!confirm('정말로 탈퇴하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+                return;
+            }
+            try {
+                const response = await fetch(`${userApiUrl}/withdraw`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: password })
+                });
+                if (response.ok) {
+                    alert('회원 탈퇴가 완료되었습니다. 이용해주셔서 감사합니다.');
+                    currentUser = null;
+                    handleNavigate('home');
+                } else {
+                    const errorText = await response.text();
+                    msgEl.textContent = errorText || '비밀번호가 일치하지 않습니다.';
+                }
+            } catch (e) {
+                console.error("Error during withdrawal:", e);
+                msgEl.textContent = '서버 통신 중 오류가 발생했습니다.';
+            }
+        }
+
         // 초기 페이지 로드
         render();
     </script>
-</body>
-</html>

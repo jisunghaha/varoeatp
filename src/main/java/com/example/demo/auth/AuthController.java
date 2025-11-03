@@ -5,6 +5,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -58,5 +59,17 @@ public class AuthController {
             return ResponseEntity.status(401).body("Not authenticated");
         }
         return ResponseEntity.ok(authentication.getName());
+    }
+
+    @DeleteMapping("/delete")
+    public ResponseEntity<?> delete(@RequestBody LoginRequest request) {
+        try {
+            userService.deleteUser(request.getEmail(), request.getPassword());
+            // 세션 무효화
+            SecurityContextHolder.clearContext();
+            return ResponseEntity.ok("User deleted successfully");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Failed to delete user: " + e.getMessage());
+        }
     }
 }
