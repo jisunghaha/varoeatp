@@ -8,6 +8,122 @@
     <style>
         @keyframes bounce-gentle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
         .bounce-gentle { animation: bounce-gentle 1.5s infinite; }
+
+        /* ⬇️⬇️⬇️ [추가된 예약 모달 CSS] ⬇️⬇️⬇️ */
+        
+        /* 기본 스타일 */
+        .modal-content { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+
+        /* 모달 오버레이 */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: none; /* JS로 제어 */
+            justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal-content {
+            background-color: #fff; border-radius: 12px;
+            width: 90%; max-width: 450px; max-height: 90vh;
+            overflow-y: auto; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            position: relative; padding: 25px;
+        }
+        .modal-close-btn {
+            position: absolute; top: 15px; right: 20px;
+            font-size: 28px; font-weight: bold; color: #aaa;
+            background: none; border: none; cursor: pointer;
+        }
+        /* 스텝 공통 */
+        .modal-step { display: none; }
+        .modal-step.active { display: block; }
+        .modal-step h2 {
+            font-size: 22px; font-weight: 700; margin-bottom: 20px;
+            text-align: center; color: #333;
+        }
+        .step-content { margin-bottom: 25px; }
+        /* 폼 요소 */
+        .form-input {
+            width: 100%; padding: 12px 10px; border: 1px solid #ddd;
+            border-radius: 8px; font-size: 15px; box-sizing: border-box;
+            margin-bottom: 15px;
+        }
+        .step-content label {
+            display: block; font-size: 14px; font-weight: 600;
+            color: #555; margin-bottom: 8px;
+        }
+        .placeholder-text {
+            color: #888; font-size: 14px; padding: 10px;
+            background-color: #f9f9f9; border-radius: 8px; text-align: center;
+        }
+        /* 시간 선택 */
+        .time-slots-container {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 10px; margin-bottom: 15px;
+        }
+        .time-slot {
+            padding: 10px 5px; border: 1px solid #ddd; border-radius: 6px;
+            background-color: #f9f9f9; cursor: pointer; font-size: 14px;
+            text-align: center; position: relative; transition: all 0.2s;
+        }
+        .time-slot:hover:not(.disabled) { background-color: #eee; }
+        .time-slot.selected {
+            background-color: #ff5722; color: #fff; border-color: #ff5722; font-weight: bold;
+        }
+        .time-slot.disabled {
+            background-color: #f0f0f0; color: #aaa; cursor: not-allowed; text-decoration: line-through;
+        }
+        .time-slot .badge {
+            position: absolute; top: -5px; right: -5px;
+            background-color: #ff9800; color: #fff; font-size: 10px;
+            padding: 2px 5px; border-radius: 3px; line-height: 1;
+        }
+        .time-slot.full .badge { background-color: #999; }
+        /* 테이블 선택 */
+        .table-options-container { display: flex; flex-direction: column; gap: 10px; }
+        .table-option-item {
+            padding: 15px; border: 1px solid #ddd; border-radius: 8px;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .table-option-item:hover:not(.disabled) {
+            border-color: #ff5722; box-shadow: 0 2px 8px rgba(255, 87, 34, 0.1);
+        }
+        .table-option-item.selected {
+            border-color: #ff5722; background-color: #fff3e0; border-width: 2px;
+        }
+        .table-option-item.disabled {
+            background-color: #f0f0f0; color: #aaa; cursor: not-allowed; opacity: 0.6;
+        }
+        .table-option-info { font-size: 13px; color: #666; }
+        .table-option-name {
+            display: flex; justify-content: space-between; align-items: center;
+            font-weight: bold; font-size: 16px; color: #333; margin-bottom: 5px;
+        }
+        .price-tag {
+            background-color: #e0e0e0; color: #333; padding: 3px 8px;
+            border-radius: 12px; font-size: 12px; font-weight: 600;
+        }
+        .table-option-available {
+            font-size: 12px; color: #007bff; font-weight: 500; margin-top: 5px;
+        }
+        /* 예약 요약 */
+        .summary-box {
+            background-color: #f9f9f9; border: 1px solid #eee;
+            border-radius: 8px; padding: 15px;
+        }
+        .summary-box p { font-size: 15px; color: #333; margin: 8px 0; }
+        .note { font-size: 13px; color: #888; text-align: center; margin-top: 15px; }
+        /* 모달 버튼 */
+        .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-primary, .btn-secondary {
+            flex: 1; padding: 12px 0; font-size: 16px; font-weight: bold;
+            border: none; border-radius: 6px; cursor: pointer; transition: background-color 0.2s;
+        }
+        .btn-primary { background-color: #ff5722; color: #fff; }
+        .btn-primary:hover:not(:disabled) { background-color: #e64a19; }
+        .btn-primary:disabled { background-color: #f7a88e; cursor: not-allowed; }
+        .btn-secondary { background-color: #f0f0f0; color: #555; border: 1px solid #ddd; }
+        .btn-secondary:hover { background-color: #e0e0e0; }
+
+        /* ⬆️⬆️⬆️ [CSS 끝] ⬆️⬆️⬆️ */
     </style>
 </head>
 <body class="bg-gray-50 font-sans">
@@ -15,6 +131,73 @@
     <div id="app" class="min-h-screen flex flex-col">
         <header id="header-container"></header>
         <main id="view-container" class="flex-grow"></main>
+        
+        <div id="reservation-modal" class="modal-overlay">
+            <div class="modal-content">
+                <button class="modal-close-btn">&times;</button>
+                
+                <div id="step-1" class="modal-step active">
+                    <h2>테이블 예약</h2>
+                    <div class="step-content">
+                        <label for="reservation-date">날짜 선택</label>
+                        <input type="date" id="reservation-date" class="form-input">
+
+                        <label>시간 선택</label>
+                        <div id="time-slots" class="time-slots-container">
+                            <p class="placeholder-text">날짜를 먼저 선택해 주세요.</p>
+                        </div>
+
+                        <label for="party-size">인원 수</label>
+                        <select id="party-size" class="form-input">
+                            <option value="">인원을 선택하세요</option>
+                            <option value="1">1명</option>
+                            <option value="2">2명</option>
+                            <option value="3">3명</option>
+                            <option value="4">4명</option>
+                            <option value="5">5명</option>
+                            <option value="6">6명</option>
+                            <option value="7">7명</option>
+                            <option value="8">8명</option>
+                        </select>
+                    </div>
+                    <div class="modal-actions">
+                        <button id="next-to-step-2" class="btn-primary" disabled>다음</button>
+                    </div>
+                </div>
+
+                <div id="step-2" class="modal-step">
+                    <h2>테이블 선택</h2>
+                    <div class="step-content">
+                        <div id="table-options" class="table-options-container">
+                            <p class="placeholder-text">이전 단계를 완료해 주세요.</p>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button class="btn-secondary prev-step" data-target="step-1">이전</button>
+                        <button id="next-to-step-3" class="btn-primary" disabled>선택 완료</button>
+                    </div>
+                </div>
+
+                <div id="step-3" class="modal-step">
+                    <h2>예약 확인</h2>
+                    <div class="step-content">
+                        <div id="reservation-summary" class="summary-box">
+                            <p><strong>날짜:</strong> <span id="summary-date"></span></p>
+                            <p><strong>시간:</strong> <span id="summary-time"></span></p>
+                            <p><strong>인원:</strong> <span id="summary-party"></span></p>
+                            <p><strong>테이블:</strong> <span id="summary-table"></span></p>
+                            <p><strong>추가요금:</strong> <span id="summary-price"></span>원</p>
+                        </div>
+                        <p class="note">예약 취소는 2시간 전까지 가능합니다.</p>
+                    </div>
+                    <div class="modal-actions">
+                        <button class="btn-secondary prev-step" data-target="step-2">이전</button>
+                        <button id="submit-reservation" class="btn-primary">예약 확정하기</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
         <footer class="bg-gradient-to-r from-orange-900 to-red-900 text-white py-12 mt-16">
             <div class="container mx-auto px-4">
                 <div class="grid md:grid-cols-4 gap-8">
@@ -88,6 +271,11 @@
                             <section class="text-center py-24 bg-white rounded-xl shadow-lg">
                                 <h1 class="text-5xl font-extrabold mb-4 text-orange-600">바로 예약하고 바로 잇자!</h1>
                                 <p class="text-lg text-gray-600 mb-8">모든 디자인과 기능이 복구 및 통합되었습니다.</p>
+                                
+                                <button id="open-reservation-modal" 
+                                        class="mt-8 bg-orange-500 text-white px-8 py-3 rounded-full text-lg font-semibold hover:bg-orange-600 shadow-md transform hover:scale-105 transition-transform">
+                                    실시간 테이블 예약하기
+                                </button>
                                 </section>
                         </div>`;
                     break;
@@ -272,4 +460,261 @@
 
         // 초기 페이지 로드
         render();
+
+
+        // ⬇️⬇️⬇️ [추가된 예약 JavaScript] ⬇️⬇️⬇️
+
+        // --- 예약 상태 변수 ---
+        const reservationState = {
+            date: null,
+            time: null,
+            partySize: null,
+            table: null // { id, name, price }
+        };
+
+        // --- 모달 제어 ---
+        const modal = document.getElementById('reservation-modal');
+        const closeBtn = document.querySelector('.modal-close-btn');
+
+        // [수정됨] openBtn은 동적으로 생성되므로, 상위 컨테이너(app)에 이벤트 위임
+        document.getElementById('app').addEventListener('click', (e) => {
+            if (e.target && e.target.id === 'open-reservation-modal') {
+                
+                // [개선] 로그인한 사용자만 예약 버튼을 누를 수 있도록 수정
+                if (!currentUser) {
+                    alert('예약 기능은 로그인 후 이용 가능합니다.');
+                    handleNavigate('login'); // 로그인 페이지로 이동
+                    return;
+                }
+                modal.style.display = 'flex';
+            }
+        });
+        
+        closeBtn.addEventListener('click', () => modal.style.display = 'none');
+        window.addEventListener('click', (e) => {
+            if (e.target === modal) modal.style.display = 'none';
+        });
+
+        // --- 스텝 제어 ---
+        const steps = document.querySelectorAll('.modal-step');
+        const nextBtn1 = document.getElementById('next-to-step-2');
+        const nextBtn2 = document.getElementById('next-to-step-3');
+        const prevBtns = document.querySelectorAll('.prev-step');
+
+        function navigateToStep(stepId) {
+            steps.forEach(step => step.classList.remove('active'));
+            document.getElementById(stepId).classList.add('active');
+        }
+
+        nextBtn1.addEventListener('click', () => {
+            fetchTableOptions();
+            navigateToStep('step-2');
+        });
+
+        nextBtn2.addEventListener('click', () => {
+            updateReservationSummary();
+            navigateToStep('step-3');
+        });
+
+        prevBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                navigateToStep(btn.dataset.target);
+            });
+        });
+
+        // --- 1단계: 날짜, 시간, 인원 ---
+        const dateInput = document.getElementById('reservation-date');
+        const timeSlotsContainer = document.getElementById('time-slots');
+        const partySizeSelect = document.getElementById('party-size');
+
+        dateInput.min = new Date().toISOString().split('T')[0];
+
+        dateInput.addEventListener('change', () => {
+            reservationState.date = dateInput.value;
+            reservationState.time = null; // 날짜 바뀌면 시간 초기화
+            fetchAvailableTimes();
+            validateStep1();
+        });
+
+        partySizeSelect.addEventListener('change', () => {
+            reservationState.partySize = partySizeSelect.value;
+            validateStep1();
+        });
+
+        // (API CALL) 1. 가용 시간 불러오기
+        async function fetchAvailableTimes() {
+            if (!reservationState.date) return;
+            timeSlotsContainer.innerHTML = '<p class="placeholder-text">시간을 불러오는 중...</p>';
+            try {
+                const response = await fetch(`/api/reservations/times?date=${reservationState.date}`);
+                if (!response.ok) throw new Error('시간 조회 실패');
+                const times = await response.json();
+                renderTimeSlots(times);
+            } catch (error) {
+                console.error(error);
+                timeSlotsContainer.innerHTML = `<p class="placeholder-text" style="color: red;">${error.message}</p>`;
+            }
+        }
+
+        // 시간 버튼 렌더링
+        function renderTimeSlots(times) {
+            timeSlotsContainer.innerHTML = '';
+            if (times.length === 0) {
+                timeSlotsContainer.innerHTML = '<p class="placeholder-text">이용 가능한 시간대가 없습니다.</p>';
+                return;
+            }
+            times.forEach(({ time, status }) => {
+                const timeBtn = document.createElement('button');
+                timeBtn.className = `time-slot ${status}`;
+                timeBtn.dataset.time = time.substring(0, 5);
+                timeBtn.textContent = time.substring(0, 5);
+                timeBtn.disabled = (status === 'full');
+                if (status === 'popular') {
+                    const badge = document.createElement('span');
+                    badge.className = 'badge';
+                    badge.textContent = '인기';
+                    timeBtn.appendChild(badge);
+                }
+                if (status === 'full') {
+                    const badge = document.createElement('span');
+                    badge.className = 'badge';
+                    badge.textContent = '마감';
+                    timeBtn.appendChild(badge);
+                }
+                timeBtn.addEventListener('click', () => {
+                    document.querySelectorAll('.time-slot.selected').forEach(btn => btn.classList.remove('selected'));
+                    timeBtn.classList.add('selected');
+                    reservationState.time = timeBtn.dataset.time;
+                    validateStep1();
+                });
+                timeSlotsContainer.appendChild(timeBtn);
+            });
+        }
+
+        // 1단계 유효성 검사
+        function validateStep1() {
+            const isValid = reservationState.date && reservationState.time && reservationState.partySize;
+            nextBtn1.disabled = !isValid;
+        }
+
+        // --- 2단계: 테이블 선택 ---
+        const tableOptionsContainer = document.getElementById('table-options');
+
+        // (API CALL) 2. 테이블 옵션 불러오기
+        async function fetchTableOptions() {
+            const { date, time, partySize } = reservationState;
+            if (!date || !time || !partySize) return;
+            tableOptionsContainer.innerHTML = '<p class="placeholder-text">테이블 정보 조회 중...</p>';
+            try {
+                const response = await fetch(`/api/reservations/tables?date=${date}&time=${time}&partySize=${partySize}`);
+                if (!response.ok) throw new Error('테이블 조회 실패');
+                const tables = await response.json();
+                renderTableOptions(tables);
+            } catch (error) {
+                console.error(error);
+                tableOptionsContainer.innerHTML = `<p class="placeholder-text" style="color: red;">${error.message}</p>`;
+            }
+        }
+
+        // 테이블 옵션 렌더링
+        function renderTableOptions(tables) {
+            tableOptionsContainer.innerHTML = '';
+            const availableTables = tables.filter(table => table.availableCount > 0);
+            if (availableTables.length === 0) {
+                tableOptionsContainer.innerHTML = '<p class="placeholder-text">이용 가능한 테이블이 없습니다.</p>';
+                return;
+            }
+            availableTables.forEach(table => {
+                const item = document.createElement('div');
+                item.className = 'table-option-item';
+                item.dataset.tableId = table.id;
+                item.dataset.tableName = table.name;
+                item.dataset.tablePrice = table.price;
+                item.innerHTML = `
+                    <div class="table-option-name">
+                        <span>${table.name}</span>
+                        ${table.price > 0 ? `<span class="price-tag">+${table.price.toLocaleString()}원</span>` : ''}
+                    </div>
+                    <div class="table-option-info">
+                        <p>${table.capacity}</p>
+                        <p>${table.description}</p>
+                        <span class="table-option-available">예약 가능 (${table.availableCount}개)</span>
+                    </div>
+                `;
+                item.addEventListener('click', () => {
+                    document.querySelectorAll('.table-option-item.selected').forEach(el => el.classList.remove('selected'));
+                    item.classList.add('selected');
+                    reservationState.table = { id: table.id, name: table.name, price: table.price };
+                    validateStep2();
+                });
+                tableOptionsContainer.appendChild(item);
+            });
+        }
+
+        // 2단계 유효성 검사
+        function validateStep2() {
+            nextBtn2.disabled = !reservationState.table;
+        }
+
+        // --- 3단계: 예약 확인 및 제출 ---
+        const submitBtn = document.getElementById('submit-reservation');
+
+        function updateReservationSummary() {
+            document.getElementById('summary-date').textContent = reservationState.date;
+            document.getElementById('summary-time').textContent = reservationState.time;
+            document.getElementById('summary-party').textContent = `${reservationState.partySize}명`;
+            document.getElementById('summary-table').textContent = reservationState.table.name;
+            document.getElementById('summary-price').textContent = reservationState.table.price.toLocaleString();
+        }
+
+        // (API CALL) 3. 예약 제출
+        submitBtn.addEventListener('click', async () => {
+            submitBtn.disabled = true;
+            submitBtn.textContent = '예약 처리 중...';
+            const requestBody = {
+                date: reservationState.date,
+                time: reservationState.time,
+                partySize: parseInt(reservationState.partySize),
+                tableId: reservationState.table.id
+            };
+            try {
+                const response = await fetch('/api/reservations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                const responseText = await response.text();
+
+                if (!response.ok) {
+                    try {
+                        const errorResult = JSON.parse(responseText);
+                        throw new Error(errorResult.message || '예약 실패');
+                    } catch (e) {
+                        throw new Error(responseText || '예약 실패');
+                    }
+                }
+
+                alert('예약이 완료되었습니다!');
+                modal.style.display = 'none'; // 모달 닫기
+                
+                // 성공 시 상태 초기화
+                reservationState.date = null;
+                reservationState.time = null;
+                reservationState.partySize = null;
+                reservationState.table = null;
+                navigateToStep('step-1'); // 모달을 1단계로 리셋
+                
+            } catch (error) {
+                console.error(error);
+                alert(`예약 실패: ${error.message}`);
+                submitBtn.disabled = false;
+                submitBtn.textContent = '예약 확정하기';
+            }
+        });
+        
+        // ⬆️⬆️⬆️ [추가된 JavaScript 끝] ⬆️⬆️⬆️
+
     </script>
+</body>
+</html>
