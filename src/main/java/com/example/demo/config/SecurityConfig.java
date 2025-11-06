@@ -2,12 +2,11 @@ package com.example.demo.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod; // 👈 [추가]
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.config.http.SessionCreationPolicy; // import 추가
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -41,17 +40,9 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
 
             .authorizeHttpRequests(authorize -> authorize
-                // 🔽 [수정됨] 예약 API 경로 추가
-                .requestMatchers(
-                    "/baroeat_interface.html", 
-                    "/api/auth/**",
-                    "/api/reservations/times",   // 시간 조회 (모두 허용)
-                    "/api/reservations/tables"    // 테이블 조회 (모두 허용)
-                ).permitAll()
-                // 예약 생성(POST)은 로그인한 사용자만 가능하도록 설정
-                .requestMatchers(HttpMethod.POST, "/api/reservations").authenticated() 
+                // 👇 [확인] "/api/stores/**"가 포함되어 있는지 확인하세요.
+                .requestMatchers("/", "/baroeat_interface.html", "/api/auth/**", "/api/stores/**").permitAll()
                 .anyRequest().authenticated()
-                // 🔼 [수정 완료]
             )
             .logout(logout -> logout
                 .logoutUrl("/api/auth/logout")
