@@ -6,9 +6,17 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Table;
 import jakarta.persistence.Column;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "users")
+@Builder
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
 public class User {
 
     @Id
@@ -27,6 +35,12 @@ public class User {
 
     @Column(name = "phone_number") // 휴대폰 번호 컬럼 매핑
     private String phoneNumber;
+    private String provider;
+    public User(String userName, String email, String provider) {
+        this.userName = userName;
+        this.email = email;
+        this.provider = provider;
+    }
     
     // Getters and setters (추가된 필드 포함)
     public Long getId() { return id; }
@@ -41,4 +55,6 @@ public class User {
     
     public String getPhoneNumber() { return phoneNumber; } // phone_number의 Getter/Setter
     public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
+    
 }
+

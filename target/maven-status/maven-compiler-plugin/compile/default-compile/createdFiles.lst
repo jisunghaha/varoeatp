@@ -1,9 +1,7 @@
-com\example\demo\config\SecurityConfig.class
-com\example\demo\BaroeatpApplication.class
-com\example\demo\domain\User.class
 com\example\demo\service\UserService.class
+com\example\demo\auth\AuthController.class
+com\example\demo\repository\UserRepository.class
 com\example\demo\auth\LoginRequest.class
 com\example\demo\auth\RegisterRequest.class
-com\example\demo\auth\AuthController.class
-com\example\demo\dto\UserResponseDto.class
-com\example\demo\repository\UserRepository.class
+com\example\demo\config\SecurityConfig.class
+com\example\demo\domain\User.class

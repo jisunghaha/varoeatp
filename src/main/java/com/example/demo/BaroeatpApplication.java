@@ -7,7 +7,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder; // impo
 import org.springframework.security.crypto.password.PasswordEncoder; // import 추가
 
 @SpringBootApplication
-// @Import(SecurityConfig.class) // 이 줄은 이제 주석 처리하거나 삭제합니다.
 public class BaroeatpApplication {
 
     public static void main(String[] args) {

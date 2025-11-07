@@ -38,19 +38,13 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String email = getEmailFromAttributes(registrationId, attributes);
         String name = getNameFromAttributes(registrationId, attributes);
 
-        Optional<User> userOptional = userRepository.findByEmail(email);
-        User user;
+        User user = userRepository.findByEmail(email);
 
-        if (userOptional.isPresent()) {
-            user = userOptional.get();
-        } else {
-            user = User.builder()
-                    .userName(name)
-                    .email(email)
-                    .provider(registrationId)
-                    .build();
-            userRepository.save(user);
-        }
+    if (user == null) {
+    // // 사용자가 없으면 새로 생성 (Builder 대신 새 생성자 사용)
+    user = new User(name, email, registrationId); // 👈 [수정]
+    userRepository.save(user);
+}
 
         return new DefaultOAuth2User(
                 Collections.singleton(new SimpleGrantedAuthority("ROLE_USER")),

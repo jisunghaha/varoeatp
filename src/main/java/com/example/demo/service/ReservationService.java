@@ -86,12 +86,16 @@ public class ReservationService {
 
     @Transactional
     public Reservation createReservation(ReservationRequest request, String userEmail) {
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        User user = userRepository.findByEmail(userEmail);
+                if (user == null) {
+    throw new IllegalArgumentException("사용자를 찾을 수 없습니다.");
+}
         
         StoreTable table = storeTableRepository.findById(request.getTableId())
-                .orElseThrow(() -> new IllegalArgumentException("테이블을 찾을 수 없습니다."));
-
+                .orElse(null);
+if (table == null) {
+    throw new IllegalArgumentException("테이블을 찾을 수 없습니다.");
+}
         LocalTime time = LocalTime.parse(request.getTime(), TIME_FORMATTER);
 
         // (중요) 예약 가능 여부 최종 확인 (동시성 문제 고려 필요)
