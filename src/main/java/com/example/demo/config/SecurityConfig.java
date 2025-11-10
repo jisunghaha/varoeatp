@@ -2,11 +2,12 @@ package com.example.demo.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy; // import 추가
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -35,15 +36,20 @@ public class SecurityConfig {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
-
-            // 👇👇👇 세션 관리 정책을 명시적으로 추가하여 쿠키 생성을 보장합니다.
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
 
             .authorizeHttpRequests(authorize -> authorize
-                // 👇 [확인] "/api/stores/**"가 포함되어 있는지 확인하세요.
-                .requestMatchers("/", "/baroeat_interface.html", "/api/auth/**", "/api/stores/**").permitAll()
+
+                .requestMatchers(HttpMethod.GET, "/api/reservations/times", "/api/reservations/tables").permitAll()
+ 
+                .requestMatchers(HttpMethod.GET, "/api/stores/**").permitAll()
+
+                .requestMatchers("/", "/baroeat_interface.html", "/api/auth/**").permitAll()
+
                 .anyRequest().authenticated()
             )
+
+
             .logout(logout -> logout
                 .logoutUrl("/api/auth/logout")
                 .logoutSuccessHandler((request, response, authentication) -> response.setStatus(200))
