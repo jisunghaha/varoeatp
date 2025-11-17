@@ -9,6 +9,16 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder; // 👈 import 문이 이것으로 변경되었습니다.
 import org.springframework.stereotype.Service;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.Builder; // 👈 1. 이 import가 있는지 확인
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.AllArgsConstructor; // 👈 2. 이 import가 있는지 확인
 import java.util.ArrayList;
 
 @Service
