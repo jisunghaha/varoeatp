@@ -1,16 +1,12 @@
 package com.example.demo.domain;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table; // 👈 1. import 추가
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "store_tables") // 👈 2. 이 줄을 추가
+@Table(name = "store_tables")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -18,6 +14,7 @@ public class StoreTable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "table_id")
     private Long id;
 
     private String name; 

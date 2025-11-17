@@ -1,9 +1,10 @@
 package com.example.demo;
+
+import com.example.demo.config.SecurityConfig;
 import org.junit.jupiter.api.Disabled;
-import com.example.demo.config.SecurityConfig; // SecurityConfig import
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import; // Import 어노테이션
+import org.springframework.context.annotation.Import;
 @Disabled
 @SpringBootTest
 @Import(SecurityConfig.class)

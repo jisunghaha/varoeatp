@@ -1,7 +1,8 @@
 package com.example.demo.dto;
 
-import java.time.LocalDate;
 import lombok.Getter;
+
+import java.time.LocalDate;
 
 @Getter
 public class ReservationRequest {

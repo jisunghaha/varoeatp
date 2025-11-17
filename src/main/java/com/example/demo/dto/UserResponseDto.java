@@ -14,7 +14,7 @@ public class UserResponseDto {
 
     public UserResponseDto(User user) {
         this.id = user.getId();
-        this.userName = user.getUserName();
+        this.userName = user.getUsername();
         this.email = user.getEmail();
         this.phoneNumber = user.getPhoneNumber();
     }

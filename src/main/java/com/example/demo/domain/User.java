@@ -1,60 +1,39 @@
 package com.example.demo.domain;
 
 import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import jakarta.persistence.Column;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.AllArgsConstructor;
+import jakarta.persistence.Column; // 👈 1. 이 import 구문 (회색이어도 정상)
 
 @Entity
 @Table(name = "users")
-@Builder
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "user_id")
+    @Column(name = "user_id") // 👈 (해결됨) 이것은 기본 키
     private Long id;
 
-    @Column(name = "email") // 아이디 역할
-    private String email; 
+    // 👇 1. 이 어노테이션을 username 필드 위에 추가하세요.
+    @Column(name = "user_name")
+    private String username;
 
-    @Column(name = "password")
     private String password;
-
-    @Column(name = "user_name") // DB 컬럼명 user_name 매핑
-    private String userName; // 자바 변수명은 userName (camelCase)
-
-    @Column(name = "phone_number") // 휴대폰 번호 컬럼 매핑
-    private String phoneNumber;
+    private String nickname;
+    private String email;
+    private String role;
     private String provider;
-    public User(String userName, String email, String provider) {
-        this.userName = userName;
-        this.email = email;
-        this.provider = provider;
-    }
-    
-    // Getters and setters (추가된 필드 포함)
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
-    public String getPassword() { return password; }
-    public void setPassword(String password) { this.password = password; }
-    
-    public String getUserName() { return userName; } // user_name의 Getter/Setter
-    public void setUserName(String userName) { this.userName = userName; }
-    
-    public String getPhoneNumber() { return phoneNumber; } // phone_number의 Getter/Setter
-    public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
-    
+    private String phoneNumber;
 }
-

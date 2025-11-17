@@ -1,8 +1,7 @@
 package com.example.demo.config;
 
-// 1. import 문 추가
 import com.example.demo.service.CustomOAuth2UserService;
-
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -24,12 +23,8 @@ import java.util.Arrays;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    // 2. 서비스 주입을 위한 필드와 생성자 추가
-    private final CustomOAuth2UserService customOAuth2UserService;
-
-    public SecurityConfig(CustomOAuth2UserService customOAuth2UserService) {
-        this.customOAuth2UserService = customOAuth2UserService;
-    }
+    @Autowired
+    private CustomOAuth2UserService customOAuth2UserService;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -51,16 +46,20 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
 
                         .requestMatchers(HttpMethod.GET, "/api/reservations/times", "/api/reservations/tables").permitAll()
-
                         .requestMatchers(HttpMethod.GET, "/api/stores/**").permitAll()
-
                         .requestMatchers("/", "/baroeat_interface.html", "/api/auth/**").permitAll()
+
+                        // --- 3. OAuth2 리다이렉션 경로 허용 ---
+                        .requestMatchers("/login/oauth2/code/**", "/oauth2/**").permitAll()
 
                         .anyRequest().authenticated()
                 )
+
                 .oauth2Login(oauth2 -> oauth2
+                        .loginPage("/") // (선택사항) 로그인 페이지 경로
+                        .defaultSuccessUrl("/baroeat_interface.html", true) // 로그인 성공 시 이동할 페이지
                         .userInfoEndpoint(userInfo -> userInfo
-                                .userService(customOAuth2UserService)
+                                .userService(customOAuth2UserService) // 우리가 만든 Custom 서비스 연결
                         )
                 )
 
