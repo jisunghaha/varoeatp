@@ -47,6 +47,7 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.GET, "/api/reservations/times", "/api/reservations/tables").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/stores/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
                         .requestMatchers("/", "/baroeat_interface.html", "/api/auth/**").permitAll()
 
                         // --- 3. OAuth2 리다이렉션 경로 허용 ---
