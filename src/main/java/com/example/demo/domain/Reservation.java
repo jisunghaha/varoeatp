@@ -4,14 +4,12 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
 import java.time.LocalDate;
 import java.time.LocalTime;
 
 @Entity
-@Table(name = "reservations")
-@Getter
-@Setter
+@Table(name = "baro_reservations") // 👈 이름 변경!
+@Getter @Setter
 @NoArgsConstructor
 public class Reservation {
 

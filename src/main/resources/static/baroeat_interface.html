@@ -3,79 +3,149 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>바로잇 - 최종 완성본</title>
+    <title>바로잇 - 서비스</title>
     <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=193769daf0c31ee061eba59ad214d977&libraries=services"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @keyframes bounce-gentle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
         .bounce-gentle { animation: bounce-gentle 1.5s infinite; }
+        .profile-img { object-fit: cover; }
+        /* 모달 스타일 */
+        .modal { transition: opacity 0.25s ease; }
+        body.modal-active { overflow-x: hidden; overflow-y: visible !important; }
     </style>
 </head>
 <body class="bg-gray-50 font-sans">
 
-    <div id="app" class="min-h-screen flex flex-col">
-        <header id="header-container"></header>
-        <main id="view-container" class="flex-grow"></main>
-        <footer class="bg-gradient-to-r from-orange-900 to-red-900 text-white py-12 mt-16">
-            <div class="container mx-auto px-4">
-                <div class="grid md:grid-cols-4 gap-8">
-                    <div>
-                        <div class="flex items-center space-x-3 mb-4">
-                            <div class="w-10 h-10 rounded-lg bounce-gentle bg-yellow-400 flex items-center justify-center text-xl font-bold text-orange-900">잇</div>
-                            <span class="font-bold text-xl">바로잇</span>
-                        </div>
-                        <p class="text-sm text-orange-100">새로운 식사 경험의 시작</p>
-                    </div>
-                    <div>
-                        <h4 class="font-bold mb-4 text-orange-200">서비스</h4>
-                        <button class="block text-sm text-orange-100 hover:text-yellow-300" onclick="handleNavigate('home')">실시간 예약</button>
-                    </div>
-                    <div>
-                        <h4 class="font-bold mb-4 text-orange-200">고객지원</h4>
-                        <p class="text-sm text-orange-100">고객센터</p>
-                    </div>
-                    <div>
-                        <h4 class="font-bold mb-4 text-orange-200">계정</h4>
-                        <button class="block text-sm text-orange-100 hover:text-yellow-300" onclick="handleNavigate('login')">로그인</button>
-                        <button class="block text-sm text-orange-100 hover:text-yellow-300" onclick="handleNavigate('signup')">회원가입</button>
+<div id="app" class="min-h-screen flex flex-col relative">
+    <header id="header-container"></header>
+    <main id="view-container" class="flex-grow pb-24"></main> <div id="cart-bar" class="fixed bottom-0 left-0 w-full bg-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] p-4 hidden z-40">
+    <div class="container mx-auto max-w-4xl flex justify-between items-center">
+        <div>
+            <span class="text-gray-600 text-sm">총 주문 금액</span>
+            <p id="cart-total-price" class="text-xl font-bold text-orange-600">0원</p>
+        </div>
+        <button onclick="openReservationModal()" class="bg-orange-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-orange-600 shadow-lg transition transform active:scale-95">
+            예약하기 (<span id="cart-count">0</span>)
+        </button>
+    </div>
+</div>
+
+    <div id="reservation-modal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
+        <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50"></div>
+
+        <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded shadow-lg z-50 overflow-y-auto max-h-[90vh]">
+            <div class="modal-content py-4 text-left px-6">
+                <div class="flex justify-between items-center pb-3 border-b">
+                    <p class="text-2xl font-bold text-orange-600">예약 정보 입력</p>
+                    <div class="modal-close cursor-pointer z-50" onclick="closeReservationModal()">
+                        <svg class="fill-current text-black" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18">
+                            <path d="M14.53 4.53l-1.06-1.06L9 7.94 4.53 3.47 3.47 4.53 7.94 9l-4.47 4.47 1.06 1.06L9 10.06l4.47 4.47 1.06-1.06L10.06 9z"></path>
+                        </svg>
                     </div>
                 </div>
+
+                <div class="my-5 space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold mb-2">날짜</label>
+                        <input type="date" id="res-date" class="w-full p-2 border rounded">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold mb-2">시간</label>
+                        <select id="res-time" class="w-full p-2 border rounded">
+                            <option value="">시간 선택</option>
+                            <option value="11:00">11:00</option><option value="11:30">11:30</option>
+                            <option value="12:00">12:00</option><option value="12:30">12:30</option>
+                            <option value="13:00">13:00</option><option value="13:30">13:30</option>
+                            <option value="17:00">17:00</option><option value="17:30">17:30</option>
+                            <option value="18:00">18:00</option><option value="18:30">18:30</option>
+                            <option value="19:00">19:00</option><option value="19:30">19:30</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold mb-2">인원</label>
+                        <input type="number" id="res-party" min="1" value="2" class="w-full p-2 border rounded">
+                    </div>
+
+                    <div class="bg-gray-50 p-3 rounded mt-4">
+                        <h4 class="font-bold text-sm mb-2">주문 내역</h4>
+                        <ul id="modal-cart-list" class="text-sm text-gray-600 space-y-1"></ul>
+                        <hr class="my-2">
+                        <p class="text-right font-bold text-orange-600" id="modal-total-price">0원</p>
+                    </div>
+                </div>
+
+                <div class="flex justify-end pt-2">
+                    <button onclick="closeReservationModal()" class="px-4 bg-transparent p-3 rounded-lg text-orange-500 hover:bg-gray-100 hover:text-orange-400 mr-2">취소</button>
+                    <button onclick="submitReservation()" class="px-4 bg-orange-500 p-3 rounded-lg text-white hover:bg-orange-400 font-bold">예약 확정</button>
+                </div>
             </div>
-        </footer>
+        </div>
     </div>
 
-    <script>
+    <footer class="bg-gradient-to-r from-orange-900 to-red-900 text-white py-12 mt-16">
+        <div class="container mx-auto px-4">
+            <div class="text-center">
+                <div class="flex items-center justify-center space-x-3 mb-4">
+                    <div class="w-10 h-10 rounded-lg bg-yellow-400 flex items-center justify-center text-xl font-bold text-orange-900">잇</div>
+                    <span class="font-bold text-xl">바로잇</span>
+                </div>
+                <p class="text-sm text-orange-100">새로운 식사 경험의 시작</p>
+            </div>
+        </div>
+    </footer>
+</div>
+
+<script>
+    // ==========================================
+    //  전역 변수 및 설정
+    // ==========================================
     let currentView = 'home';
     let currentUser = null;
     let currentStoreId = null;
+
+    // 장바구니 데이터: { productId: { name, price, count } }
+    let cart = {};
+
     const headerContainer = document.getElementById('header-container');
     const viewContainer = document.getElementById('view-container');
     const apiUrl = '/api/auth';
 
+    // 음식 종류 데이터
+    const FOOD_TYPES = {
+        "KOREAN": "한식", "CHINESE": "중식", "JAPANESE": "일식",
+        "WESTERN": "양식", "SNACK": "분식", "CHICKEN": "치킨",
+        "PIZZA": "피자", "FASTFOOD": "패스트푸드", "JOKBAL_BOSSAM": "족발/보쌈",
+        "ASIAN": "아시안", "MEXICAN": "멕시칸", "LUNCHBOX": "도시락",
+        "SALAD": "샐러드", "CAFE": "카페", "DESERT": "디저트",
+        "MEAT": "고기/구이", "BAR": "술집"
+    };
+
+    // ==========================================
+    //  1. 네비게이션 및 화면 렌더링
+    // ==========================================
     function handleNavigate(page, id = null) {
         currentView = page;
         currentStoreId = id;
+
+        // 장바구니 UI 제어
+        const cartBar = document.getElementById('cart-bar');
+        if (page === 'store-detail') {
+            // 매장 상세에서만 장바구니 보임 (내용이 있으면)
+            updateCartUI();
+        } else {
+            cartBar.classList.add('hidden');
+            cart = {}; // 다른 페이지로 이동 시 장바구니 초기화
+        }
         render();
     }
-function toggleCategory(cleanId) {
-    const contentElement = document.getElementById(`category-content-${cleanId}`);
-    
-    if (contentElement) {
-        // Tailwind CSS의 'hidden' 클래스를 토글하여 숨기거나 보이게 합니다.
-        contentElement.classList.toggle('hidden'); 
-        
-        // (선택 사항) 제목 옆에 펼쳐짐/접힘 상태를 표시할 수 있습니다.
-        const titleElement = document.getElementById(`category-title-${cleanId}`);
-        if (titleElement) {
-             // 텍스트를 변경하여 사용자에게 상태를 알려줍니다.
-            if (contentElement.classList.contains('hidden')) {
-                titleElement.innerHTML = titleElement.innerHTML.replace('(접기)', '(펼치기)');
-            } else {
-                titleElement.innerHTML = titleElement.innerHTML.replace('(펼치기)', '(접기)');
-            }
-        }
+
+    async function render() {
+        if (currentUser === null) { await checkLoginStatus(); }
+        renderHeader();
+        renderView();
     }
-}
+
     function renderHeader() {
         if (currentView === 'login' || currentView === 'signup') {
             headerContainer.innerHTML = ''; return;
@@ -83,7 +153,7 @@ function toggleCategory(cleanId) {
         const authButtons = currentUser
             ? `<div class="flex items-center space-x-4">
                    <span class="font-medium text-gray-700">${currentUser}님</span>
-                   <button onclick="handleNavigate('mypage')" class="bg-gray-200 text-gray-600 px-3 py-1 rounded-full text-sm font-semibold hover:bg-gray-300">마이페이지</button>
+                   <button onclick="handleNavigate('mypage')" class="bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-sm font-semibold hover:bg-orange-200">마이페이지</button>
                    <button onclick="handleLogout()" class="bg-gray-200 text-gray-600 px-3 py-1 rounded-full text-sm font-semibold hover:bg-gray-300">로그아웃</button>
                </div>`
             : `<button onclick="handleNavigate('login')" class="bg-orange-500 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-orange-600">로그인 / 가입</button>`;
@@ -107,15 +177,12 @@ function toggleCategory(cleanId) {
                     <div class="container mx-auto px-4 py-8">
                         <section class="text-center py-24 bg-white rounded-xl shadow-lg">
                             <h1 class="text-5xl font-extrabold mb-4 text-orange-600">바로 예약하고 바로 잇자!</h1>
-                            <p class="text-lg text-gray-600 mb-8">바로잇.</p>
-                            <button onclick="handleNavigate('store-list')" 
-                                    class="bg-orange-500 text-white px-6 py-3 rounded-full text-lg font-semibold hover:bg-orange-600">
-                                매장 찾으러 가기
-                            </button>
+                            <p class="text-lg text-gray-600 mb-8">기다리지 말고 바로 드세요.</p>
+                            <button onclick="handleNavigate('store-list')" class="bg-orange-500 text-white px-6 py-3 rounded-full text-lg font-semibold hover:bg-orange-600">매장 찾으러 가기</button>
                         </section>
                     </div>`;
                 break;
-            
+
             case 'store-list':
                 viewContainer.innerHTML = `
                     <div class="container mx-auto px-4 py-8">
@@ -126,389 +193,132 @@ function toggleCategory(cleanId) {
                                 <p>매장을 불러오는 중입니다...</p>
                             </div>
                         </div>
-                    </div>
-                `;
-                setTimeout(loadStoresAndMap, 10); 
+                    </div>`;
+                setTimeout(loadStoresAndMap, 10);
                 break;
 
             case 'store-detail':
                 viewContainer.innerHTML = `
-                    <div class="container mx-auto px-4 py-8 max-w-lg">
-                        <div id="store-detail-content" class="bg-white p-8 rounded-xl shadow-lg">
-                            <p class="text-lg text-gray-600">매장 상세 정보를 불러오는 중입니다...</p>
+                    <div class="container mx-auto px-4 py-8 max-w-3xl">
+                        <div id="store-detail-content" class="bg-white p-8 rounded-xl shadow-lg mb-6">
+                            <p class="text-lg text-gray-600">매장 정보를 불러오는 중...</p>
                         </div>
-                        <button onclick="handleNavigate('store-list')" 
-                                class="mt-6 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300">
-                            &larr; 목록으로 돌아가기
-                        </button>
-                    </div>
-                `;
-                loadStoreDetail(); 
-                break;
-                //매장 메뉴 목록 (카테고리) 뷰
-            case 'store-menu':
-                viewContainer.innerHTML = `
-                    <div class="container mx-auto px-4 py-8 max-w-2xl">
-                        <div id="menu-category-content" class="bg-white p-8 rounded-xl shadow-lg">
-                            <p class="text-lg text-gray-600">메뉴 카테고리를 불러오는 중입니다...</p>
+                        <div id="store-menu-content" class="bg-white p-8 rounded-xl shadow-lg pb-20">
+                             <p class="text-lg text-gray-600">메뉴를 불러오는 중...</p>
                         </div>
-                        <button onclick="handleNavigate('store-detail', currentStoreId)" 
-                            class="mt-6 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300">
-                            &larr; 매장 상세 정보로 돌아가기
-                        </button>
-                    </div>
-                `;
-                loadStoreMenu(); 
+                        <button onclick="handleNavigate('store-list')" class="mt-6 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300">목록으로 돌아가기</button>
+                    </div>`;
+                loadStoreDetail();
                 break;
-                // 상품 상세 정보 뷰
-                case 'product-detail':
-                viewContainer.innerHTML = `
-                    <div class="container mx-auto px-4 py-8 max-w-lg">
-                        <div id="product-detail-content" class="bg-white p-8 rounded-xl shadow-lg">
-                            <p class="text-lg text-gray-600">상품 상세 정보를 불러오는 중입니다...</p>
-                        </div>
-                        <button onclick="window.history.back()" 
-                            class="mt-6 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300">
-                            &larr; 이전 화면으로 돌아가기
-                        </button>
-                    </div>
-                `;
-                loadProductDetail();
-                break;
+
             case 'login':
                 viewContainer.innerHTML = `
                     <div class="container mx-auto py-16 max-w-md">
                         <div class="bg-white p-8 rounded-xl shadow-lg">
                             <h2 class="text-3xl font-bold mb-6 text-center text-orange-600">로그인</h2>
                             <div class="space-y-6">
-                                <input type="email" id="login-email" placeholder="이메일 (아이디)" class="w-full p-3 border rounded-lg">
+                                <input type="email" id="login-email" placeholder="이메일" class="w-full p-3 border rounded-lg">
                                 <input type="password" id="login-password" placeholder="비밀번호" class="w-full p-3 border rounded-lg">
                                 <button onclick="handleBackendLogin()" class="w-full bg-orange-500 text-white p-3 rounded-lg font-bold hover:bg-orange-600">로그인</button>
-                                <p id="login-message" class="text-center text-sm text-red-500 h-4"></p>
-
-                                <div class="relative my-4">
-                                    <div class="absolute inset-0 flex items-center">
-                                        <div class="w-full border-t border-gray-300"></div>
-                                    </div>
-                                    <div class="relative flex justify-center text-sm">
-                                        <span class="bg-white px-2 text-gray-500">또는</span>
-                                    </div>
-                                </div>
-
-                                <a href="/oauth2/authorization/kakao" 
-                                   class="block w-full bg-[#FEE500] text-black p-3 rounded-lg font-bold hover:bg-yellow-400 text-center">
-                                    카카오로 로그인하기
-                                </a>
-                                <div class="text-center text-sm">
-                                    <button class="text-gray-500 hover:text-orange-500" onclick="handleNavigate('signup')">아직 계정이 없으신가요? 회원가입</button>
-                                </div>
+                                <a href="/oauth2/authorization/kakao" class="block w-full bg-[#FEE500] text-black p-3 rounded-lg font-bold text-center">카카오 로그인</a>
+                                <button class="w-full text-gray-500 hover:text-orange-500" onclick="handleNavigate('signup')">회원가입</button>
                             </div>
                         </div>
                     </div>`;
                 break;
-
             case 'signup':
                 viewContainer.innerHTML = `
                     <div class="container mx-auto py-16 max-w-md">
                         <div class="bg-white p-8 rounded-xl shadow-lg">
                             <h2 class="text-3xl font-bold mb-6 text-center text-orange-600">회원가입</h2>
                             <div class="space-y-4">
-                                <input type="text" id="signup-user-name" placeholder="이름" class="w-full p-3 border rounded-lg">
-                                <input type="email" id="signup-email" placeholder="이메일 (아이디)" class="w-full p-3 border rounded-lg">
+                                <input type="text" id="signup-user-name" placeholder="이름 (실명)" class="w-full p-3 border rounded-lg">
+                                <input type="text" id="signup-nickname" placeholder="닉네임 (별명)" class="w-full p-3 border rounded-lg">
+                                <input type="email" id="signup-email" placeholder="이메일" class="w-full p-3 border rounded-lg">
                                 <input type="tel" id="signup-phone-number" placeholder="휴대폰 번호" class="w-full p-3 border rounded-lg">
                                 <input type="password" id="signup-password" placeholder="비밀번호" class="w-full p-3 border rounded-lg">
-                                <button onclick="handleBackendSignup()" class="w-full bg-orange-500 text-white p-3 rounded-lg font-bold hover:bg-orange-600">회원가입 완료</button>
-                                <p id="signup-message" class="text-center text-sm text-red-500 h-4"></p>
+                                <button onclick="handleBackendSignup()" class="w-full bg-orange-500 text-white p-3 rounded-lg font-bold hover:bg-orange-600">가입하기</button>
                             </div>
                         </div>
                     </div>`;
                 break;
-
-            // [수정] 'mypage' 케이스의 내용을 구현합니다.
             case 'mypage':
                 viewContainer.innerHTML = `
-                    <div class="container mx-auto py-16 max-w-md">
-                        <div class="bg-white p-8 rounded-xl shadow-lg">
-                            <h2 class="text-3xl font-bold mb-6 text-center text-orange-600">마이페이지</h2>
-                            <div class="space-y-4">
-                                <p class="text-lg">
-                                    <strong>이메일:</strong> 
-                                    <span id="mypage-email" class="text-gray-700">불러오는 중...</span>
-                                </p>
-                                
-                                <hr class="my-6 pt-4">
-                                
-                                <h3 class="text-2xl font-bold mb-2">회원 탈퇴</h3>
-                                <p class="text-sm text-gray-600 mb-4">
-                                    탈퇴 시 모든 정보가 삭제되며 복구할 수 없습니다. 
-                                    (소셜 로그인은 연결만 해제됩니다)
-                                </p>
-                                <input type="password" id="withdraw-password" placeholder="비밀번호 확인" class="w-full p-3 border rounded-lg">
-                                <button onclick="handleWithdraw()" class="w-full bg-red-500 text-white p-3 rounded-lg font-bold hover:bg-red-600">회원 탈퇴</button>
-                                <p id="mypage-message" class="text-center text-sm text-red-500 h-4"></p>
+                    <div class="container mx-auto py-8 px-4 max-w-4xl">
+                        <div class="grid md:grid-cols-3 gap-6">
+                            <div class="md:col-span-1">
+                                <div class="bg-white p-6 rounded-xl shadow-lg text-center">
+                                    <div class="relative w-32 h-32 mx-auto mb-4 group">
+                                        <img id="profile-img-display" src="https://via.placeholder.com/150" class="w-full h-full rounded-full profile-img border-4 border-orange-100 shadow-sm">
+                                        <label id="profile-img-label" for="profile-img-input" class="hidden absolute bottom-0 right-0 bg-orange-500 text-white p-2 rounded-full cursor-pointer hover:bg-orange-600 shadow-md">📷</label>
+                                        <input type="file" id="profile-img-input" class="hidden" accept="image/*" onchange="handleImageUpload(this)">
+                                    </div>
+                                    <h3 id="mypage-nickname" class="text-xl font-bold mb-1">로딩중...</h3>
+                                    <p id="mypage-email" class="text-sm text-gray-500 mb-4"></p>
+                                    <hr class="my-4">
+                                    <button onclick="handleLogout()" class="text-sm text-gray-500 underline hover:text-red-500">로그아웃</button>
+                                </div>
+                            </div>
+                            <div class="md:col-span-2 space-y-6">
+                                <div class="bg-white p-6 rounded-xl shadow-lg">
+                                    <div class="flex justify-between items-center mb-4">
+                                        <h3 class="text-xl font-bold text-gray-800">내 정보</h3>
+                                        <button id="btn-edit-mode" onclick="toggleEditMode(true)" class="text-sm bg-gray-100 px-3 py-1 rounded hover:bg-gray-200">✎ 수정하기</button>
+                                    </div>
+                                    <div id="view-mode-container">
+                                        <div class="mb-4">
+                                            <p class="text-sm text-gray-500">닉네임</p>
+                                            <p id="view-nickname" class="text-lg font-medium text-gray-800">-</p>
+                                        </div>
+                                        <div class="mb-4">
+                                            <p class="text-sm text-gray-500 mb-2">선호하는 음식</p>
+                                            <div id="view-food-tags" class="flex flex-wrap gap-2"></div>
+                                        </div>
+                                    </div>
+                                    <div id="edit-mode-container" class="hidden space-y-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">닉네임 변경</label>
+                                            <input type="text" id="edit-nickname" class="w-full p-2 border rounded-lg">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">선호하는 음식 선택</label>
+                                            <div id="food-checkbox-container" class="grid grid-cols-3 gap-2 bg-gray-50 p-3 rounded-lg border"></div>
+                                        </div>
+                                        <div class="flex gap-2 pt-2">
+                                            <button onclick="handleUpdateProfile()" class="flex-1 bg-orange-500 text-white py-2 rounded-lg font-bold">저장 완료</button>
+                                            <button onclick="toggleEditMode(false)" class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg font-bold">취소</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="bg-white p-6 rounded-xl shadow-lg">
+                                    <h3 class="text-xl font-bold mb-4 text-gray-800">📋 나의 예약 내역</h3>
+                                    <div class="overflow-x-auto">
+                                        <table class="w-full text-sm text-left">
+                                            <thead class="bg-gray-50 text-gray-600"><tr><th class="p-3">가게명</th><th class="p-3">시간</th><th class="p-3">인원</th><th class="p-3">관리</th></tr></thead>
+                                            <tbody id="reservation-list-body"><tr><td colspan="4" class="p-4 text-center">로딩중...</td></tr></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <button onclick="toggleWithdraw()" class="text-xs text-red-400 underline">회원 탈퇴하기</button>
+                                    <div id="withdraw-area" class="hidden mt-2 bg-red-50 p-4 rounded-lg text-left">
+                                        <input type="password" id="withdraw-password" placeholder="비밀번호" class="w-full p-2 text-sm border rounded mb-2">
+                                        <button onclick="handleWithdraw()" class="bg-red-500 text-white px-3 py-1 rounded text-xs font-bold">확인</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                `;
-                // 뷰가 렌더링된 후 사용자 정보를 불러옵니다.
-                loadMyPageInfo();
+                    </div>`;
+                loadFullMyPage();
                 break;
         }
     }
 
-    async function render() {
-        if (currentUser === null) {
-            await checkLoginStatus();
-        }
-        renderHeader();
-        renderView();
-    }
-
-    async function loadStoresAndMap() {
-        const mapContainer = document.getElementById('map');
-        const mapOption = {
-            center: new kakao.maps.LatLng(35.148, 129.038),
-            level: 4
-        };
-        const map = new kakao.maps.Map(mapContainer, mapOption);
-        const listSidebar = document.getElementById('store-list-sidebar');
-
-        try {
-            // [백엔드 연결] /api/stores (GET)
-            const response = await fetch('/api/stores'); 
-            if (!response.ok) throw new Error('서버에서 매장 목록을 가져오지 못했습니다.');
-            
-            const stores = await response.json();
-            
-            if (stores.length === 0) {
-                listSidebar.innerHTML = '<p>주변에 등록된 매장이 없습니다.</p>';
-                return;
-            }
-
-            listSidebar.innerHTML = ''; 
-
-            stores.forEach(store => {
-                const lat = parseFloat(store.lat);
-                const lng = parseFloat(store.lng);
-
-                if (!isNaN(lat) && !isNaN(lng)) {
-                    const position = new kakao.maps.LatLng(lat, lng);
-
-                    const marker = new kakao.maps.Marker({
-                        position: position,
-                        title: store.storeName 
-                    });
-                    marker.setMap(map);
-
-                    kakao.maps.event.addListener(marker, 'click', function() {
-                        handleNavigate('store-detail', store.id);
-                    });
-
-                    const storeEl = document.createElement('div');
-                    storeEl.className = 'p-4 border-b hover:bg-gray-100 cursor-pointer';
-                    storeEl.onclick = () => handleNavigate('store-detail', store.id); 
-                    
-                    storeEl.innerHTML = `
-                        <h3 class="font-bold text-lg">${store.storeName}</h3>
-                        <p class="text-sm text-gray-600">${store.address}</p>
-                    `;
-                    listSidebar.appendChild(storeEl);
-                }
-            });
-
-            if (stores.length > 0) {
-                const firstLat = parseFloat(stores[0].lat);
-                const firstLng = parseFloat(stores[0].lng);
-                if (!isNaN(firstLat) && !isNaN(firstLng)) {
-                    map.setCenter(new kakao.maps.LatLng(firstLat, firstLng));
-                }
-            }
-        } catch (error) {
-            console.error(error);
-            listSidebar.innerHTML = `<p class="text-red-500">오류: ${error.message}</p>`;
-        }
-    }
-
-    async function loadStoreDetail() {
-        const contentEl = document.getElementById('store-detail-content');
-        
-        if (currentStoreId === null) {
-            contentEl.innerHTML = '<p class="text-red-500">오류: 매장 ID가 없습니다.</p>';
-            return;
-        }
-
-        try {
-             // [백엔드 연결] /api/stores/{id} (GET)
-            const response = await fetch(`/api/stores/${currentStoreId}`);
-            if (!response.ok) throw new Error('서버에서 매장 정보를 가져오지 못했습니다.');
-            
-            const store = await response.json();
-
-            const openStatusText = store.isOpen 
-                ? '<span class="text-green-600 font-bold">영업 중</span>' 
-                : '<span class="text-red-600 font-bold">영업 종료</span>';
-
-            contentEl.innerHTML = `
-                     <h1 class="text-4xl font-extrabold mb-4 text-orange-600">${store.storeName}</h1>
-                    <div class="space-y-3">
-                        <p class="text-lg text-gray-700">
-                        <strong>주소:</strong> ${store.address}
-                     </p>
-                    <p class="text-lg text-gray-700">
-                    <strong>전화번호:</strong> ${store.phoneNumber}
-                     </p>
-                     <p class="text-lg text-gray-700 mb-6">
-                     <strong>영업상태:</strong> ${openStatusText}
-                      </p>
-                    
-                   <button onclick="handleNavigate('store-menu', ${store.id})" 
-                     class="w-full bg-orange-500 text-white p-3 rounded-lg font-bold hover:bg-orange-600 transition duration-150 ease-in-out">
-                    메뉴 보기
-                    </button>
-                    
-                    </div>
-     `;
-            // (예약 기능은 여기에 추가 구현 필요)
-
-        } catch (error) {
-            console.error(error);
-            contentEl.innerHTML = `<p class="text-red-500">오류: ${error.message}</p>`;
-        }
-    }
-async function loadStoreMenu() {
-    const contentEl = document.getElementById('menu-category-content');
-    
-    if (currentStoreId === null) {
-        contentEl.innerHTML = '<p class="text-red-500">오류: 매장 ID가 없습니다.</p>';
-        return;
-    }
-
-    try {
-        // [백엔드 연결] /api/stores/{id}/products (GET)
-        const response = await fetch(`/api/stores/${currentStoreId}/products`);
-        if (!response.ok) throw new Error('메뉴 목록을 가져오지 못했습니다.');
-        
-        const products = await response.json();
-
-        // 매장 이름 로드
-        const storeResponse = await fetch(`/api/stores/${currentStoreId}`);
-        const store = await storeResponse.json();
-        
-        let htmlContent = `<h1 class="text-4xl font-extrabold mb-6 text-orange-600">${store.storeName} 메뉴</h1>`;
-        
-        if (products.length === 0) {
-            htmlContent += '<p class="text-lg text-gray-600">등록된 메뉴가 없습니다.</p>';
-        } else {
-            // 2. 카테고리별로 상품 그룹화
-            const categories = products.reduce((acc, product) => {
-                const category = product.category || '기타 메뉴'; 
-                if (!acc[category]) {
-                    acc[category] = [];
-                }
-                acc[category].push(product);
-                return acc;
-            }, {});
-
-            // 3. 화면에 출력
-            let index = 0; // [수정] 고유 번호를 매기기 위한 변수
-
-            for (const category in categories) {
-                // [수정] 한글 이름 대신, 'cat-0', 'cat-1' 처럼 안전한 숫자 ID를 사용합니다.
-                const uniqueId = `cat-${index}`; 
-                index++; // 다음 번호를 위해 1 증가
-                
-                htmlContent += `
-                    <h2 
-                        class="text-2xl font-bold mt-8 mb-4 border-b pb-2 cursor-pointer text-orange-600 hover:text-orange-800 transition duration-150 flex justify-between items-center"
-                        onclick="toggleCategory('${uniqueId}')"
-                        id="category-title-${uniqueId}"
-                    >
-                        <span>${category}</span>
-                        <span class="text-sm text-gray-400">▼</span>
-                    </h2>
-                    
-                    <div id="category-content-${uniqueId}" class="space-y-2 hidden"> 
-                `;
-                
-                categories[category].forEach(product => {
-                    htmlContent += `
-                        <div class="flex justify-between items-start p-3 border-b last:border-b-0 hover:bg-gray-50 cursor-pointer" 
-                            onclick="handleNavigate('product-detail', ${product.id})">
-                            
-                            <div class="flex-grow pr-4"> 
-                                <h3 class="font-semibold text-lg">${product.name}</h3>
-                                <p class="text-sm text-gray-500 line-clamp-2">${product.description || '상세 설명 없음'}</p>
-                                <span class="text-orange-600 font-bold mt-1 block">${product.price.toLocaleString()}원</span>
-                            </div>
-                            
-                            <img src="${product.imageUrl || 'https://via.placeholder.com/80x80?text=NO+IMAGE'}" 
-                                alt="${product.name}" 
-                                class="w-20 h-20 object-cover rounded-lg shadow-sm flex-shrink-0" />
-                        </div>
-                    `;
-                });
-                
-                htmlContent += `</div>`; // 카테고리 닫기
-            }
-        }
-        
-        contentEl.innerHTML = htmlContent;
-    }
-    catch (error) {
-        console.error('메뉴 로딩 오류:', error);
-        contentEl.innerHTML = `<p class="text-red-500">오류: 메뉴 정보를 불러올 수 없습니다. (${error.message})</p>`;
-    }
-}
-
-async function loadProductDetail() {
-    const contentEl = document.getElementById('product-detail-content');
-    const productId = currentStoreId; // currentStoreId 변수를 상품 ID로 재활용
-    
-    if (productId === null) {
-        contentEl.innerHTML = '<p class="text-red-500">오류: 상품 ID가 없습니다.</p>';
-        return;
-    }
-
-    try {
-        // [백엔드 연결] /api/stores/products/{productId} (GET)
-        const response = await fetch(`/api/stores/products/${productId}`);
-        if (!response.ok) throw new Error('상품 상세 정보를 가져오지 못했습니다.');
-        
-        const product = await response.json();
-        
-        // 상품이 속한 매장 정보를 가져와서 메뉴로 돌아갈 때 사용 (선택 사항)
-        const storeResponse = await fetch(`/api/stores/${product.storeId}`);
-        const store = await storeResponse.json();
-        
-        contentEl.innerHTML = `
-            <h1 class="text-3xl font-extrabold mb-2 text-orange-600">${product.name}</h1>
-            <h2 class="text-xl font-bold mb-6 text-gray-700">${product.price.toLocaleString()}원</h2>
-            
-            <p class="text-lg text-gray-700 mb-8">${product.description || '제공된 상세 설명이 없습니다.'}</p>
-            
-            <hr class="my-6">
-            
-            <div class="space-y-2 text-md text-gray-600">
-                <p><strong>매장:</strong> <span class="font-semibold">${store.storeName}</span></p>
-                <p><strong>카테고리:</strong> ${product.category || '분류 없음'}</p>
-            </div>
-            
-            <button class="w-full bg-red-500 text-white p-3 rounded-lg font-bold mt-8 hover:bg-red-600">
-                바로 주문하기
-            </button>
-        `;
-        
-        // 메뉴 목록으로 돌아갈 때 매장 ID를 전달하기 위해 currentStoreId를 다시 설정 (선택 사항)
-        currentStoreId = product.storeId; 
-
-    } catch (error) {
-        console.error('상품 상세 로딩 오류:', error);
-        contentEl.innerHTML = `<p class="text-red-500">오류: 상품 정보를 불러올 수 없습니다. (${error.message})</p>`;
-    }
-}
+    // ==========================================
+    //  2. 인증 및 사용자 관리 (누락되었던 부분 복구)
+    // ==========================================
     async function checkLoginStatus() {
         try {
-            // [백엔드 연결] /api/auth/me (GET)
             const response = await fetch(`${apiUrl}/me`);
             currentUser = response.ok ? await response.text() : null;
         } catch (e) { currentUser = null; }
@@ -517,139 +327,391 @@ async function loadProductDetail() {
     async function handleBackendLogin() {
         const email = document.getElementById('login-email').value;
         const password = document.getElementById('login-password').value;
-        const msgEl = document.getElementById('login-message');
         try {
-            // [백엔드 연결] /api/auth/login (POST)
             const response = await fetch(`${apiUrl}/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })
             });
-
             if (response.ok) {
                 currentUser = await response.text();
                 handleNavigate('home');
-            } else {
-                const errorText = await response.text();
-                console.error("Login failed:", errorText);
-                msgEl.textContent = '로그인 실패. 정보를 확인하세요.';
-            }
-        } catch (e) { 
-            console.error("Error during login:", e);
-            msgEl.textContent = '오류 발생.'; 
-        }
+            } else { alert('로그인 실패'); }
+        } catch (e) { console.error(e); }
     }
 
     async function handleBackendSignup() {
         const signupData = {
-            userName: document.getElementById('signup-user-name').value,
+            username: document.getElementById('signup-user-name').value,
+            nickname: document.getElementById('signup-nickname').value,
             email: document.getElementById('signup-email').value,
             phoneNumber: document.getElementById('signup-phone-number').value,
             password: document.getElementById('signup-password').value
         };
-        const msgEl = document.getElementById('signup-message');
         try {
-            // [백엔드 연결] /api/auth/register (POST)
             const response = await fetch(`${apiUrl}/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(signupData)
             });
             if (response.ok) {
-                alert('회원가입 성공! 로그인 해주세요.');
+                alert('가입 성공!');
                 handleNavigate('login');
-            } else {
-                msgEl.textContent = '회원가입 실패.';
-            }
-        } catch (e) { msgEl.textContent = '오류 발생.'; }
+            } else { alert('가입 실패: ' + await response.text()); }
+        } catch (e) { console.error(e); }
     }
 
-    // [수정] 로그아웃 함수 추가
     async function handleLogout() {
+        await fetch('/api/auth/logout', { method: 'POST' });
+        currentUser = null;
+        alert('로그아웃되었습니다.');
+        handleNavigate('home');
+    }
+
+    // ==========================================
+    //  3. 마이페이지 및 데이터 로드
+    // ==========================================
+    async function loadFullMyPage() {
+        const chkContainer = document.getElementById('food-checkbox-container');
+        let html = '';
+        for (const [key, value] of Object.entries(FOOD_TYPES)) {
+            html += `<label class="flex items-center space-x-2 text-sm cursor-pointer hover:bg-gray-100 p-1 rounded">
+                        <input type="checkbox" value="${key}" class="food-chk form-checkbox text-orange-500 rounded">
+                        <span>${value}</span>
+                     </label>`;
+        }
+        chkContainer.innerHTML = html;
+
         try {
-            // [백엔드 연결] /api/auth/logout (POST)
-            const response = await fetch('/api/auth/logout', {
-                method: 'POST',
+            const res = await fetch('/user/mypage');
+            if (res.status === 401) { handleNavigate('login'); return; }
+            const data = await res.json();
+
+            document.getElementById('mypage-nickname').textContent = data.nickname || currentUser;
+            document.getElementById('mypage-email').textContent = data.email;
+            document.getElementById('view-nickname').textContent = data.nickname || "(별명 없음)";
+
+            const viewTags = document.getElementById('view-food-tags');
+            if (data.preferredFoods && data.preferredFoods.length > 0) {
+                viewTags.innerHTML = data.preferredFoods.map(code =>
+                    `<span class="bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs font-semibold">${FOOD_TYPES[code] || code}</span>`
+                ).join('');
+            } else {
+                viewTags.innerHTML = '<span class="text-gray-400 text-sm">없음</span>';
+            }
+
+            document.getElementById('edit-nickname').value = data.nickname || "";
+            if (data.preferredFoods) {
+                const checkboxes = document.querySelectorAll('.food-chk');
+                checkboxes.forEach(chk => { if (data.preferredFoods.includes(chk.value)) chk.checked = true; });
+            }
+            if (data.profileImageUrl) {
+                document.getElementById('profile-img-display').src = data.profileImageUrl + "?t=" + new Date().getTime();
+            }
+        } catch (e) { console.error(e); }
+        loadReservations();
+    }
+
+    function toggleEditMode(isEdit) {
+        const viewMode = document.getElementById('view-mode-container');
+        const editMode = document.getElementById('edit-mode-container');
+        const btnEdit = document.getElementById('btn-edit-mode');
+        const imgLabel = document.getElementById('profile-img-label');
+
+        if (isEdit) {
+            viewMode.classList.add('hidden');
+            editMode.classList.remove('hidden');
+            btnEdit.classList.add('hidden');
+            imgLabel.classList.remove('hidden');
+        } else {
+            viewMode.classList.remove('hidden');
+            editMode.classList.add('hidden');
+            btnEdit.classList.remove('hidden');
+            imgLabel.classList.add('hidden');
+        }
+    }
+
+    async function handleUpdateProfile() {
+        const nickname = document.getElementById('edit-nickname').value;
+        const checkedFoods = [];
+        document.querySelectorAll('.food-chk:checked').forEach(chk => checkedFoods.push(chk.value));
+
+        try {
+            const res = await fetch('/user/profile', {
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nickname: nickname, preferredFoods: checkedFoods })
             });
-
-            if (response.ok) {
-                currentUser = null; // 프론트엔드 상태 변경
-                alert('로그아웃되었습니다.');
-                handleNavigate('home'); // 홈으로 이동
-            } else {
-                alert('로그아웃 실패. 잠시 후 다시 시도하세요.');
-            }
-        } catch (e) {
-            console.error('Logout error:', e);
-            alert('로그아웃 중 오류가 발생했습니다.');
-        }
+            if (res.ok) {
+                alert('저장되었습니다!');
+                toggleEditMode(false);
+                loadFullMyPage();
+            } else { alert('수정 실패'); }
+        } catch (e) { alert('오류 발생'); }
     }
 
-    // [수정] 마이페이지 정보 로드 함수 추가
-    async function loadMyPageInfo() {
-        const emailEl = document.getElementById('mypage-email');
-        const msgEl = document.getElementById('mypage-message');
+    async function handleImageUpload(input) {
+        if (!input.files || !input.files[0]) return;
+        const formData = new FormData();
+        formData.append('file', input.files[0]);
         try {
-            // [백엔드 연결] /user/mypage (GET)
-            const response = await fetch('/user/mypage');
-            
-            if (response.ok) {
-                const data = await response.json(); // { "email": "..." }
-                emailEl.textContent = data.email;
-            } else if (response.status === 401) {
-                // 로그인이 안 된 경우
-                alert('로그인이 필요합니다.');
-                handleNavigate('login');
-            } else {
-                msgEl.textContent = '정보를 불러오는데 실패했습니다.';
-            }
-        } catch (e) {
-            console.error('MyPage load error:', e);
-            msgEl.textContent = '페이지 로드 중 오류 발생.';
-        }
+            const res = await fetch('/user/profile/image', { method: 'POST', body: formData });
+            const data = await res.json();
+            if (data.imageUrl) {
+                document.getElementById('profile-img-display').src = data.imageUrl + "?t=" + new Date().getTime();
+            } else { alert('업로드 실패'); }
+        } catch (e) { alert('업로드 오류'); }
     }
 
-    // [수정] 회원 탈퇴 함수 추가
+    async function loadReservations() {
+        try {
+            const res = await fetch('/user/reservations');
+            const list = await res.json();
+            const tbody = document.getElementById('reservation-list-body');
+            if (list.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">예약 내역이 없습니다.</td></tr>'; return; }
+            let rows = '';
+            list.forEach(item => {
+                rows += `<tr class="border-b hover:bg-gray-50">
+                            <td class="p-3 font-medium">${item.storeName}</td>
+                            <td class="p-3 text-gray-600 text-xs">${item.reservationTime}</td>
+                            <td class="p-3">${item.partySize}명</td>
+                            <td class="p-3">
+                                <button onclick="alert('취소 기능은 곧 구현됩니다.')" class="bg-red-100 text-red-600 px-2 py-1 rounded text-xs hover:bg-red-200">취소</button>
+                            </td>
+                         </tr>`;
+            });
+            tbody.innerHTML = rows;
+        } catch (e) { console.error(e); }
+    }
+
+    function toggleWithdraw() { document.getElementById('withdraw-area').classList.toggle('hidden'); }
+
     async function handleWithdraw() {
-        const password = document.getElementById('withdraw-password').value;
-        const msgEl = document.getElementById('mypage-message');
-
-        if (!password) {
-            msgEl.textContent = '비밀번호를 입력해야 합니다.';
-            return;
-        }
-
-        if (!confirm('정말로 회원 탈퇴를 하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
-            return;
-        }
-
+        const pw = document.getElementById('withdraw-password').value;
+        if(!pw) return alert('비밀번호 입력');
+        if(!confirm('탈퇴하시겠습니까?')) return;
         try {
-            // [백엔드 연결] /user/withdraw (POST)
-            const response = await fetch('/user/withdraw', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ password: password }) // 본문에 비밀번호 전송
+            const res = await fetch('/user/withdraw', {
+                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({password: pw})
             });
-            
-            const responseText = await response.text(); // 서버 응답 텍스트
+            if(res.ok) { alert('탈퇴 완료'); currentUser = null; handleNavigate('home'); }
+            else { alert('탈퇴 실패: ' + await res.text()); }
+        } catch(e) { alert('오류'); }
+    }
 
-            if (response.ok) {
-                alert(responseText); // "회원 탈퇴 성공"
-                currentUser = null; // 로그아웃 상태로 변경
-                handleNavigate('home'); // 홈으로 이동
+    // ==========================================
+    //  4. 매장 및 장바구니
+    // ==========================================
+    async function loadStoresAndMap() {
+        const mapContainer = document.getElementById('map');
+        const mapOption = { center: new kakao.maps.LatLng(35.148, 129.038), level: 4 };
+        const map = new kakao.maps.Map(mapContainer, mapOption);
+        const listSidebar = document.getElementById('store-list-sidebar');
+        try {
+            const response = await fetch('/api/stores');
+            const stores = await response.json();
+            if (stores.length === 0) { listSidebar.innerHTML = '<p>매장 없음</p>'; return; }
+            listSidebar.innerHTML = '';
+            stores.forEach(store => {
+                const lat = parseFloat(store.lat);
+                const lng = parseFloat(store.lng);
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    const marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(lat, lng) });
+                    marker.setMap(map);
+                    kakao.maps.event.addListener(marker, 'click', () => handleNavigate('store-detail', store.id));
+                    const storeEl = document.createElement('div');
+                    storeEl.className = 'p-4 border-b hover:bg-gray-100 cursor-pointer';
+                    storeEl.onclick = () => handleNavigate('store-detail', store.id);
+                    storeEl.innerHTML = `<h3 class="font-bold text-lg">${store.storeName}</h3><p class="text-sm text-gray-600">${store.address}</p>`;
+                    listSidebar.appendChild(storeEl);
+                }
+            });
+            if (stores.length > 0) map.setCenter(new kakao.maps.LatLng(stores[0].lat, stores[0].lng));
+        } catch (error) { console.error(error); }
+    }
+
+    async function loadStoreDetail() {
+        if (!currentStoreId) return;
+        try {
+            // 1. 매장 정보 가져오기
+            const res = await fetch(`/api/stores/${currentStoreId}`);
+            const store = await res.json();
+
+            document.getElementById('store-detail-content').innerHTML = `
+                <h1 class="text-4xl font-extrabold mb-4 text-orange-600">${store.storeName}</h1>
+                <p class="text-lg">주소: ${store.address}</p>
+                <p class="text-lg">전화: ${store.phoneNumber}</p>
+                <p class="text-lg font-bold mt-2">${store.isOpen ? '영업 중 🟢' : '영업 종료 🔴'}</p>
+            `;
+
+            // 2. 메뉴(상품) 정보 가져오기
+            const prodRes = await fetch(`/api/stores/${currentStoreId}/products`);
+            const products = await prodRes.json();
+
+            let menuHtml = '<h2 class="text-2xl font-bold mb-4 text-gray-800">메뉴</h2>';
+
+            if (products.length === 0) {
+                menuHtml += '<p class="text-gray-500">등록된 메뉴가 없습니다.</p>';
             } else {
-                // "비밀번호가 일치하지 않습니다." 등 서버 오류 메시지 표시
-                msgEl.textContent = `탈퇴 실패: ${responseText}`;
+                menuHtml += '<div class="grid gap-4">';
+                products.forEach(p => {
+                    const imgHtml = p.imageUrl ? `<img src="/images/${p.imageUrl}" class="w-20 h-20 object-cover rounded-lg mr-4">` : '';
+
+                    menuHtml += `
+                        <div class="flex items-center justify-between bg-gray-50 p-4 rounded-lg border hover:shadow-md transition">
+                            <div class="flex items-center">
+                                ${imgHtml}
+                                <div>
+                                    <h3 class="font-bold text-lg">${p.name}</h3>
+                                    <p class="text-sm text-gray-600 mb-1">${p.description || ''}</p>
+                                    <span class="text-orange-600 font-bold">${p.price.toLocaleString()}원</span>
+                                </div>
+                            </div>
+                            <button onclick="addToCart(${p.id}, '${p.name}', ${p.price})" class="bg-white border border-orange-500 text-orange-500 px-3 py-1 rounded-lg hover:bg-orange-50 transition text-sm font-bold">
+                                + 담기
+                            </button>
+                        </div>
+                    `;
+                });
+                menuHtml += '</div>';
             }
-        } catch (e) {
-            console.error('Withdraw error:', e);
-            msgEl.textContent = '회원 탈퇴 중 오류가 발생했습니다.';
+
+            document.getElementById('store-menu-content').innerHTML = menuHtml;
+
+        } catch (e) { console.error(e); }
+    }
+
+    // 장바구니 로직
+    function addToCart(id, name, price) {
+        if (!cart[id]) {
+            cart[id] = { name: name, price: price, count: 0 };
+        }
+        cart[id].count++;
+        updateCartUI();
+    }
+
+    function updateCartUI() {
+        const cartBar = document.getElementById('cart-bar');
+        const totalCountEl = document.getElementById('cart-count');
+        const totalPriceEl = document.getElementById('cart-total-price');
+
+        let totalCount = 0;
+        let totalPrice = 0;
+
+        for (const id in cart) {
+            totalCount += cart[id].count;
+            totalPrice += cart[id].price * cart[id].count;
+        }
+
+        totalCountEl.innerText = totalCount;
+        totalPriceEl.innerText = totalPrice.toLocaleString() + "원";
+
+        if (totalCount > 0) {
+            cartBar.classList.remove('hidden');
+        } else {
+            cartBar.classList.add('hidden');
         }
     }
 
-    // 초기 페이지 로드
+    function openReservationModal() {
+        if (!currentUser) {
+            alert("로그인이 필요합니다.");
+            handleNavigate('login');
+            return;
+        }
+
+        const modal = document.getElementById('reservation-modal');
+        const modalCartList = document.getElementById('modal-cart-list');
+        const modalTotalPrice = document.getElementById('modal-total-price');
+
+        modal.classList.remove('opacity-0', 'pointer-events-none');
+        document.body.classList.add('modal-active');
+
+        document.getElementById('res-date').valueAsDate = new Date();
+
+        let html = '';
+        let total = 0;
+        for (const id in cart) {
+            const item = cart[id];
+            if(item.count > 0) {
+                html += `<li class="flex justify-between">
+                            <span>${item.name} x ${item.count}</span>
+                            <span>${(item.price * item.count).toLocaleString()}원</span>
+                         </li>`;
+                total += item.price * item.count;
+            }
+        }
+        modalCartList.innerHTML = html;
+        modalTotalPrice.innerText = "총 " + total.toLocaleString() + "원";
+    }
+
+    function closeReservationModal() {
+        const modal = document.getElementById('reservation-modal');
+        modal.classList.add('opacity-0', 'pointer-events-none');
+        document.body.classList.remove('modal-active');
+    }
+
+    async function submitReservation() {
+        const date = document.getElementById('res-date').value;
+        const time = document.getElementById('res-time').value;
+        const partySize = document.getElementById('res-party').value;
+
+        if (!date || !time || !partySize) {
+            alert("날짜, 시간, 인원을 모두 선택해주세요.");
+            return;
+        }
+
+        const items = [];
+        for (const id in cart) {
+            if (cart[id].count > 0) {
+                items.push({ productId: parseInt(id), count: cart[id].count });
+            }
+        }
+
+        try {
+            const tableRes = await fetch(`/api/reservations/tables?date=${date}&time=${time}&partySize=${partySize}`);
+            const tables = await tableRes.json();
+
+            if (tables.length === 0) {
+                alert("해당 시간에는 예약 가능한 테이블이 없습니다.");
+                return;
+            }
+
+            const targetTableId = tables[0].id;
+
+            const payload = {
+                date: date,
+                time: time,
+                partySize: parseInt(partySize),
+                tableId: targetTableId,
+                items: items
+            };
+
+            const res = await fetch('/api/reservations', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                alert("예약이 완료되었습니다!");
+                closeReservationModal();
+                cart = {};
+                updateCartUI();
+                handleNavigate('mypage');
+            } else {
+                const error = await res.json();
+                alert("예약 실패: " + error.message);
+            }
+
+        } catch (e) {
+            console.error(e);
+            alert("오류 발생: " + e.message);
+        }
+    }
+
+    // 초기화 실행
     render();
-    </script>
-    </body>
+</script>
+</body>
 </html>
