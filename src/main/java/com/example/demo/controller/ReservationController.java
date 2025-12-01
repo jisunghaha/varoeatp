@@ -7,8 +7,7 @@ import com.example.demo.service.ReservationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.core.Authentication; // 👈 import 변경
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -18,7 +17,7 @@ import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/reservations") // API 기본 경로
+@RequestMapping("/api/reservations")
 public class ReservationController {
 
     private final ReservationService reservationService;
@@ -44,45 +43,29 @@ public class ReservationController {
     }
 
     /**
-     * 예약 생성 API
+     * 예약 생성 API (수정됨)
      */
     @PostMapping
     public ResponseEntity<?> createReservation(
             @RequestBody ReservationRequest request,
-            @AuthenticationPrincipal OAuth2User oauthUser) { // OAuth2 로그인 사용자 기준
-        
-        if (oauthUser == null) {
-            // TODO: 일반 로그인 사용자인 경우 처리 (SecurityContext에서 가져오기)
-            // 임시로 OAuth2만 처리. 일반 로그인은 이 프로젝트에 구현되지 않은 것으로 보임.
+            Authentication authentication) { // 👈 [핵심 수정] OAuth2User 대신 Authentication 사용
+
+        // 1. 로그인 여부 확인
+        if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.status(401).body(Map.of("message", "로그인이 필요합니다."));
         }
-        
-        Map<String, Object> attributes = oauthUser.getAttributes();
-        String email = (String) attributes.get("email"); 
-        
-        if (email == null) {
-            Map<String, Object> response = (Map<String, Object>) attributes.get("response"); // 네이버 등
-            if(response != null) {
-                email = (String) response.get("email");
-            }
-        }
-         
-        if (email == null) {
-             // 카카오 등 'kakao_account' 안에 정보가 있는 경우
-            Map<String, Object> kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
-            if (kakaoAccount != null) {
-                email = (String) kakaoAccount.get("email");
-            }
-        }
 
-        if (email == null) {
-            return ResponseEntity.status(400).body(Map.of("message", "사용자 이메일을 가져올 수 없습니다."));
-        }
+        // 2. 사용자 ID 가져오기
+        // Authentication.getName()은 소셜 로그인이든 일반 로그인이든 상관없이
+        // "식별자(일반: 이메일, 소셜: 카카오ID)"를 반환해줍니다.
+        String identifier = authentication.getName();
 
         try {
-            reservationService.createReservation(request, email);
+            // 서비스로 식별자를 넘깁니다. (UserService가 알아서 처리함)
+            reservationService.createReservation(request, identifier);
             return ResponseEntity.ok(Map.of("message", "예약이 완료되었습니다."));
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
