@@ -52,9 +52,11 @@ public class UserController {
                 String email = auth.getName();
                 String password = payload.get("password");
 
-                if (password == null || password.trim().isEmpty()) {
-                    return ResponseEntity.badRequest().body("비밀번호를 입력해주세요.");
-                }
+                // 비밀번호 강제 검증 로직 제거
+                // UserService.deleteUser() 내부에서 소셜 로그인 여부에 따라 비밀번호 필요 여부를 판단합니다.
+                // if (password == null || password.trim().isEmpty()) {
+                //     return ResponseEntity.badRequest().body("비밀번호를 입력해주세요.");
+                // }
 
                 // 서비스의 deleteUser 메소드 호출 (비밀번호와 함께)
                 userService.deleteUser(email, password);

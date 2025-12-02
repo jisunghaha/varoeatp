@@ -17,10 +17,14 @@ public class StoreTable {
     @Column(name = "table_id")
     private Long id;
 
-    private String name; 
-    private String description; 
-    private int capacityMin; 
-    private int capacityMax; 
-    private int additionalPrice; 
-    private int totalCount; 
+    private String name;
+    private String description;
+    private int capacityMin;
+    private int capacityMax;
+    private int additionalPrice;
+    private int totalCount;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "store_id")
+    private Store store;
 }

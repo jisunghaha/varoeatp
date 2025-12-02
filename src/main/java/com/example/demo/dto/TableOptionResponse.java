@@ -6,6 +6,7 @@ import lombok.Getter;
 @Getter
 public class TableOptionResponse {
     private Long id;
+    private String storeName; // 식당 이름 추가
     private String name;
     private String capacity; // 예: "2-4명"
     private String description;
@@ -14,6 +15,7 @@ public class TableOptionResponse {
 
     public TableOptionResponse(StoreTable table, int availableCount) {
         this.id = table.getId();
+        this.storeName = table.getStore().getStoreName(); // 식당 이름 설정
         this.name = table.getName();
         this.capacity = table.getCapacityMin() + "-" + table.getCapacityMax() + "명";
         this.description = table.getDescription();

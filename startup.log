@@ -1,0 +1,82 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------------< com.example:baroeatp >------------------------
+[INFO] Building baroeatp 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:3.2.5:run (default-cli) > test-compile @ baroeatp >>>
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ baroeatp ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] Copying 2 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ baroeatp ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ baroeatp ---
+[INFO] Not copying test resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ baroeatp ---
+[INFO] Not compiling test sources
+[INFO] 
+[INFO] <<< spring-boot:3.2.5:run (default-cli) < test-compile @ baroeatp <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:3.2.5:run (default-cli) @ baroeatp ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.5)
+
+2025-12-02T14:35:37.574+09:00  INFO 10021 --- [           main] com.example.demo.BaroeatpApplication     : Starting BaroeatpApplication using Java 17.0.17 with PID 10021 (/Users/jisung/varoeatp/target/classes started by jisung in /Users/jisung/varoeatp)
+2025-12-02T14:35:37.575+09:00  INFO 10021 --- [           main] com.example.demo.BaroeatpApplication     : No active profile set, falling back to 1 default profile: "default"
+2025-12-02T14:35:37.824+09:00  INFO 10021 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-12-02T14:35:37.847+09:00  INFO 10021 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 20 ms. Found 6 JPA repository interfaces.
+2025-12-02T14:35:38.047+09:00  INFO 10021 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2025-12-02T14:35:38.053+09:00  INFO 10021 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2025-12-02T14:35:38.053+09:00  INFO 10021 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.20]
+2025-12-02T14:35:38.079+09:00  INFO 10021 --- [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2025-12-02T14:35:38.079+09:00  INFO 10021 --- [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 488 ms
+2025-12-02T14:35:38.143+09:00  INFO 10021 --- [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-12-02T14:35:38.175+09:00  INFO 10021 --- [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.4.4.Final
+2025-12-02T14:35:38.188+09:00  INFO 10021 --- [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2025-12-02T14:35:38.275+09:00  INFO 10021 --- [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-12-02T14:35:38.285+09:00  INFO 10021 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2025-12-02T14:35:38.564+09:00  INFO 10021 --- [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@1d2d8846
+2025-12-02T14:35:38.565+09:00  INFO 10021 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2025-12-02T14:35:38.667+09:00  WARN 10021 --- [           main] org.hibernate.orm.deprecation            : HHH90000025: MySQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2025-12-02T14:35:39.031+09:00  INFO 10021 --- [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-12-02T14:35:39.603+09:00  INFO 10021 --- [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-12-02T14:35:39.791+09:00  INFO 10021 --- [           main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+Hibernate: select count(*) from baro_store s1_0
+====== [Skip] 매장 데이터가 이미 존재합니다. ======
+Hibernate: select count(*) from baro_product p1_0
+====== [Skip] 상품 데이터가 이미 존재합니다. ======
+Hibernate: select count(*) from baro_store_tables st1_0
+====== [Skip] 테이블 데이터가 이미 존재합니다. ======
+2025-12-02T14:35:40.465+09:00  WARN 10021 --- [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2025-12-02T14:35:40.567+09:00  INFO 10021 --- [           main] o.s.s.web.DefaultSecurityFilterChain     : Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@65b17373, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@563bf9d2, org.springframework.security.web.context.SecurityContextHolderFilter@7115d5af, org.springframework.security.web.header.HeaderWriterFilter@34c79268, org.springframework.web.filter.CorsFilter@19305a7c, org.springframework.security.web.authentication.logout.LogoutFilter@7f027735, org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter@4f1a4d61, org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter@30407f28, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@36996b37, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@1006d0e3, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@7e0fc5d0, org.springframework.security.web.session.SessionManagementFilter@6e6c723b, org.springframework.security.web.access.ExceptionTranslationFilter@64aab3fd, org.springframework.security.web.access.intercept.AuthorizationFilter@f61b92d]
+2025-12-02T14:35:40.640+09:00  INFO 10021 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path ''
+2025-12-02T14:35:40.644+09:00  INFO 10021 --- [           main] com.example.demo.BaroeatpApplication     : Started BaroeatpApplication in 3.214 seconds (process running for 3.347)
+2025-12-02T14:36:08.570+09:00  INFO 10021 --- [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-12-02T14:36:08.572+09:00  INFO 10021 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2025-12-02T14:36:08.576+09:00  INFO 10021 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  31.973 s
+[INFO] Finished at: 2025-12-02T14:36:08+09:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.springframework.boot:spring-boot-maven-plugin:3.2.5:run (default-cli) on project baroeatp: Process terminated with exit code: 143 -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException

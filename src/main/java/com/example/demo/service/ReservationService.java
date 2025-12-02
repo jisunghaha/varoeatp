@@ -39,10 +39,10 @@ public class ReservationService {
     public List<AvailableTimeResponse> getAvailableTimes(LocalDate date) {
         List<AvailableTimeResponse> times = new ArrayList<>();
 
-        // 전체 테이블 수 (모든 종류의 테이블 개수 총합)
+        // 전체 테이블 수 계산
         int totalTableCapacity = storeTableRepository.findAll().stream()
                 .mapToInt(StoreTable::getTotalCount).sum();
-        if (totalTableCapacity == 0) totalTableCapacity = 1; // 테이블이 0개일 때 오류 방지
+        if (totalTableCapacity == 0) totalTableCapacity = 1;
 
         // 해당 날짜의 모든 예약
         Map<LocalTime, Long> reservationsByTime = reservationRepository.findByReservationDate(date).stream()
@@ -73,10 +73,8 @@ public class ReservationService {
 
         List<TableOptionResponse> response = new ArrayList<>();
         for (StoreTable table : matchingTables) {
-            // 2. 해당 날짜/시간에 이 테이블이 몇 개 예약되었는지 확인
+            // 해당 시간대 잔여 테이블 수 계산
             int reservedCount = reservationRepository.countByReservationDateAndReservationTimeAndStoreTable_Id(date, time, table.getId());
-
-            // 3. 남은 테이블 수 계산
             int availableCount = table.getTotalCount() - reservedCount;
 
             response.add(new TableOptionResponse(table, availableCount));
@@ -91,20 +89,19 @@ public class ReservationService {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("해당 이메일로 사용자를 찾을 수 없습니다: " + userEmail));
 
-        // 👇 [수정] 위에서 .orElseThrow로 예외 처리를 했으므로, 중복되는 null 체크 로직을 제거했습니다.
-
+        // 2. 테이블 조회
         StoreTable table = storeTableRepository.findById(request.getTableId())
-                .orElse(null); // (참고) 여기도 orElseThrow로 바꾸는 것이 더 좋습니다.
+                .orElseThrow(() -> new IllegalArgumentException("테이블을 찾을 수 없습니다."));
 
         if (table == null) {
             throw new IllegalArgumentException("테이블을 찾을 수 없습니다.");
         }
         LocalTime time = LocalTime.parse(request.getTime(), TIME_FORMATTER);
 
-        // (중요) 예약 가능 여부 최종 확인 (동시성 문제 고려 필요)
+        // 3. 중복 예약(만석) 체크
         int reservedCount = reservationRepository.countByReservationDateAndReservationTimeAndStoreTable_Id(request.getDate(), time, table.getId());
-        if (reservedCount >= table.getTotalCount()) {
-            throw new IllegalStateException("이미 마감된 테이블입니다. 다른 시간을 선택해주세요.");
+        if (reservedCount > 0) {
+            throw new IllegalStateException("이미 예약된 테이블입니다. 다른 테이블을 선택해주세요.");
         }
 
         Reservation reservation = new Reservation();
