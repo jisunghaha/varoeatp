@@ -7,7 +7,8 @@ import com.example.demo.service.ReservationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 
@@ -37,10 +38,11 @@ public class ReservationController {
      */
     @GetMapping("/tables")
     public ResponseEntity<List<TableOptionResponse>> getAvailableTableOptions(
+            @RequestParam Long storeId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam @DateTimeFormat(pattern = "HH:mm") LocalTime time,
             @RequestParam int partySize) {
-        return ResponseEntity.ok(reservationService.getAvailableTableOptions(date, time, partySize));
+        return ResponseEntity.ok(reservationService.getAvailableTableOptions(storeId, date, time, partySize));
     }
 
     /**
@@ -48,42 +50,83 @@ public class ReservationController {
      */
     @PostMapping
     public ResponseEntity<?> createReservation(
-            @RequestBody ReservationRequest request,
-            @AuthenticationPrincipal OAuth2User oauthUser) { // OAuth2 로그인 사용자 기준
-        
-        if (oauthUser == null) {
-            // TODO: 일반 로그인 사용자인 경우 처리 (SecurityContext에서 가져오기)
-            // 임시로 OAuth2만 처리. 일반 로그인은 이 프로젝트에 구현되지 않은 것으로 보임.
+            @RequestBody ReservationRequest request) {
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
             return ResponseEntity.status(401).body(Map.of("message", "로그인이 필요합니다."));
         }
-        
-        Map<String, Object> attributes = oauthUser.getAttributes();
-        String email = (String) attributes.get("email"); 
-        
-        if (email == null) {
-            Map<String, Object> response = (Map<String, Object>) attributes.get("response"); // 네이버 등
-            if(response != null) {
-                email = (String) response.get("email");
-            }
-        }
-         
-        if (email == null) {
-             // 카카오 등 'kakao_account' 안에 정보가 있는 경우
-            Map<String, Object> kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
-            if (kakaoAccount != null) {
-                email = (String) kakaoAccount.get("email");
-            }
-        }
 
-        if (email == null) {
-            return ResponseEntity.status(400).body(Map.of("message", "사용자 이메일을 가져올 수 없습니다."));
-        }
+        String userIdentifier = getUserIdentifier(auth);
 
         try {
-            reservationService.createReservation(request, email);
+            reservationService.createReservation(request, userIdentifier);
             return ResponseEntity.ok(Map.of("message", "예약이 완료되었습니다."));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> cancelReservation(@PathVariable Long id) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            return ResponseEntity.status(401).body(Map.of("message", "로그인이 필요합니다."));
+        }
+        String userIdentifier = getUserIdentifier(auth);
+        try {
+            reservationService.cancelReservation(id, userIdentifier);
+            return ResponseEntity.ok(Map.of("message", "예약이 취소되었습니다."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> modifyReservation(@PathVariable Long id, @RequestBody ReservationRequest request) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            return ResponseEntity.status(401).body(Map.of("message", "로그인이 필요합니다."));
+        }
+        String userIdentifier = getUserIdentifier(auth);
+        try {
+            reservationService.modifyReservation(id, request, userIdentifier);
+            return ResponseEntity.ok(Map.of("message", "예약이 변경되었습니다."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    // 특정 매장의 테이블 목록 조회
+    @GetMapping("/store/{storeId}/tables")
+    public ResponseEntity<List<com.example.demo.domain.StoreTable>> getTablesByStore(@PathVariable Long storeId) {
+        return ResponseEntity.ok(reservationService.getTablesByStore(storeId));
+    }
+
+    // 내 예약 내역 조회
+    @GetMapping("/my")
+    public ResponseEntity<List<com.example.demo.dto.ReservationResponse>> getMyReservations() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+            return ResponseEntity.status(401).build();
+        }
+
+        String userIdentifier = getUserIdentifier(auth);
+        return ResponseEntity.ok(reservationService.getReservationsByUser(userIdentifier));
+    }
+
+    private String getUserIdentifier(Authentication auth) {
+        if (auth.getPrincipal() instanceof OAuth2User) {
+            OAuth2User oauthUser = (OAuth2User) auth.getPrincipal();
+            Map<String, Object> attributes = oauthUser.getAttributes();
+
+            // Kakao ID 추출 (CustomOAuth2UserService 로직과 일치시켜야 함)
+            Object id = attributes.get("id");
+            if (id != null) {
+                return id.toString() + "_kakao";
+            }
+            // 다른 OAuth2 제공자 처리 필요 시 추가
+        }
+        return auth.getName(); // 일반 로그인 (이메일) 또는 OAuth2 기본 name
     }
 }

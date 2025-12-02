@@ -35,18 +35,18 @@ public class UserService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .nickname(request.getNickname())
                 .email(request.getEmail())
+                .phoneNumber(request.getPhoneNumber())
                 .role("USER")
                 .build();
 
         return userRepository.save(user);
     }
 
-
     @Transactional //
-    public void deleteUser(String username, String password) {
+    public void deleteUser(String email, String password) {
 
-        // 2. 사용자 이름으로 User 찾기
-        User user = userRepository.findByUsername(username)
+        // 2. 이메일로 User 찾기 (로그인 시 이메일 사용하므로)
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다.")); //
 
         // 3. 비밀번호 확인
@@ -56,5 +56,30 @@ public class UserService {
 
         // 4. 비밀번호가 일치하면 사용자 삭제
         userRepository.delete(user);
+    }
+
+    @Transactional
+    public void updateProfile(String email, String nickname, String preferredFood) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+        if (nickname != null && !nickname.isEmpty()) {
+            user.setNickname(nickname);
+        }
+        if (preferredFood != null && !preferredFood.isEmpty()) {
+            user.setPreferredFood(preferredFood);
+        }
+    }
+
+    // 기존 getUserDetails는 username으로 찾았지만, 이제 email로 찾는 것이 안전함
+    // 하지만 하위 호환성을 위해 남겨두거나, email로 찾도록 변경
+    public User getUserDetails(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+    }
+
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
     }
 }

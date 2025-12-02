@@ -2,10 +2,10 @@ package com.example.demo.controller;
 
 import com.example.demo.domain.Product;
 import com.example.demo.domain.Store;
+import com.example.demo.domain.StoreTable;
 import com.example.demo.repository.ProductRepository;
 import com.example.demo.repository.StoreRepository;
 import com.example.demo.repository.StoreTableRepository;
-import com.example.demo.domain.StoreTable;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -40,22 +40,19 @@ public class StoreController {
                         "수영국밥",
                         "부산 부산진구 가야공원로 59 1,2층",
                         35.14795724176053, 129.03018703293802,
-                        "0507-1352-8297", true
-                );
+                        "0507-1352-8297", true);
                 // 2. 세연정 (가야점)
                 Store testStore2 = new Store(
                         "세연정 가야점",
                         "부산 부산진구 가야대로 554",
                         35.15361309245611, 129.0326784417889,
-                        "051-867-2000", true
-                );
+                        "051-867-2000", true);
                 // 3. 타키온
                 Store testStore3 = new Store(
                         "타키온",
                         "부산 부산진구 대학로 76 1층",
                         35.149059214982096, 129.0344660298509,
-                        "051-891-1009", true
-                );
+                        "051-891-1009", true);
 
                 storeRepository.save(testStore1);
                 storeRepository.save(testStore2);
@@ -63,15 +60,16 @@ public class StoreController {
 
                 System.out.println("====== 매장 3개 DB에 자동 추가 완료 ======");
 
-                // 매장 추가 후 상품 초기화 시도
-                initTestProducts();
-
             } catch (Exception e) {
                 System.out.println("====== [오류] 매장 추가 중 실패: " + e.getMessage() + " ======");
             }
         } else {
             System.out.println("====== DB에 이미 데이터가 있으므로, 매장 추가를 건너뜁니다. ======");
         }
+
+        // 매장 추가 로직과 별개로 상품 및 테이블 초기화 실행
+        initTestProducts();
+        initTestTables();
     }
 
     // 👇 [수정됨] 우리가 정한 최신 메뉴와 가격으로 업데이트된 메서드
@@ -80,6 +78,10 @@ public class StoreController {
             System.out.println("====== [경고] 상품 데이터가 이미 존재하여 초기화를 건너뜁니다. ======");
             return;
         }
+
+        // 매장이 없으면 상품 추가 불가
+        if (storeRepository.count() == 0)
+            return;
 
         Long storeId1 = 1L; // 수영국밥
         Long storeId2 = 2L; // 세연정
@@ -109,7 +111,6 @@ public class StoreController {
         products.add(new Product("맥주", 4000, "카스/테라 병맥주", storeId1, "음료", "beer.jpg"));
         products.add(new Product("소주", 4000, "대선/진로/참이슬", storeId1, "음료", "soju.jpg"));
 
-
         // ==========================================
         // 2. 세연정 메뉴 (Store ID: 2)
         // ==========================================
@@ -127,13 +128,13 @@ public class StoreController {
         products.add(new Product("사이다", 2000, "청량한 사이다", storeId2, "음료", "cider.jpg"));
         products.add(new Product("제로 사이다", 2000, "깔끔한 제로 사이다", storeId2, "음료", "zero_cider.jpg"));
 
-
         // ==========================================
         // 3. 타키온 메뉴 (Store ID: 3)
         // ==========================================
 
         // [대표메뉴]
-        products.add(new Product("닭갈비철판볶음밥 + 계란탕미니", 9900, "든든한 볶음밥과 따뜻한 계란탕 세트", storeId3, "대표메뉴", "dakgalbi_rice.jpg"));
+        products.add(
+                new Product("닭갈비철판볶음밥 + 계란탕미니", 9900, "든든한 볶음밥과 따뜻한 계란탕 세트", storeId3, "대표메뉴", "dakgalbi_rice.jpg"));
         products.add(new Product("매콤 오돌 무뼈 닭발", 13900, "오독오독 식감이 살아있는 매운 안주", storeId3, "대표메뉴", "chicken_feet.jpg"));
         products.add(new Product("골뱅이소면", 13900, "새콤달콤한 골뱅이 무침과 쫄깃한 소면", storeId3, "대표메뉴", "whelk_noodle.jpg"));
 
@@ -146,7 +147,6 @@ public class StoreController {
         products.add(new Product("소주", 4000, "참이슬/진로/대선", storeId3, "주류", "soju.jpg"));
         products.add(new Product("맥주", 4000, "카스/테라 병맥주", storeId3, "주류", "beer.jpg"));
 
-
         productRepository.saveAll(products);
         System.out.println("====== 상품 " + products.size() + "개 DB 저장 완료 ======");
     }
@@ -158,7 +158,8 @@ public class StoreController {
             return;
         }
         // 매장 정보가 없으면 테이블을 연결할 수 없으므로 종료
-        if (storeRepository.count() == 0) return;
+        if (storeRepository.count() == 0)
+            return;
 
         System.out.println("====== 테이블 데이터 초기화 시작... ======");
 
@@ -166,38 +167,53 @@ public class StoreController {
         List<Store> allStores = storeRepository.findAll();
         List<StoreTable> allTables = new ArrayList<>();
 
-        // 각 매장마다 테이블 3개씩 추가 (2인석, 4인석, 단체석)
+        // 각 매장마다 테이블 4개씩 추가 (1인석, 2인석, 4인석, 단체석)
         for (Store store : allStores) {
-            // 1) 2인석
+            // 1) 1인석 (혼밥석)
+            StoreTable t0 = new StoreTable();
+            t0.setName("혼밥석 (바 테이블)");
+            t0.setDescription("혼자서도 편안한 바 테이블 좌석");
+            t0.setCapacityMin(1);
+            t0.setCapacityMax(1);
+            t0.setCapacity(1); // Added to satisfy DB schema
+            t0.setAdditionalPrice(0);
+            t0.setTotalCount(5);
+            t0.setStore(store);
+
+            // 2) 2인석
             StoreTable t1 = new StoreTable();
-            t1.setName("연인석 (창가)");
-            t1.setDescription("뷰가 좋은 창가 2인석");
-            t1.setCapacityMin(1);
+            t1.setName("오붓한 2인석");
+            t1.setDescription("데이트하기 좋은 2인 테이블");
+            t1.setCapacityMin(2);
             t1.setCapacityMax(2);
+            t1.setCapacity(2); // Added to satisfy DB schema
             t1.setAdditionalPrice(0);
             t1.setTotalCount(5);
-            t1.setStore(store); // 👈 중요: 매장 연결!
+            t1.setStore(store);
 
-            // 2) 4인석
+            // 3) 4인석
             StoreTable t2 = new StoreTable();
-            t2.setName("일반 4인석");
-            t2.setDescription("편안한 소파 좌석");
-            t2.setCapacityMin(2);
+            t2.setName("편안한 4인석");
+            t2.setDescription("가족, 친구와 함께하는 4인 테이블");
+            t2.setCapacityMin(3);
             t2.setCapacityMax(4);
+            t2.setCapacity(4); // Added to satisfy DB schema
             t2.setAdditionalPrice(0);
             t2.setTotalCount(10);
-            t2.setStore(store); // 👈 중요: 매장 연결!
+            t2.setStore(store);
 
-            // 3) 단체석
+            // 4) 단체석 (8인석)
             StoreTable t3 = new StoreTable();
-            t3.setName("단체 룸");
-            t3.setDescription("프라이빗한 단체 룸");
+            t3.setName("단체 회식석");
+            t3.setDescription("넓고 쾌적한 8인 단체석");
             t3.setCapacityMin(5);
             t3.setCapacityMax(8);
+            t3.setCapacity(8); // Added to satisfy DB schema
             t3.setAdditionalPrice(5000);
             t3.setTotalCount(2);
-            t3.setStore(store); // 👈 중요: 매장 연결!
+            t3.setStore(store);
 
+            allTables.add(t0);
             allTables.add(t1);
             allTables.add(t2);
             allTables.add(t3);

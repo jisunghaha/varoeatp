@@ -1,655 +1,820 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>바로잇 - 최종 완성본</title>
-    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=193769daf0c31ee061eba59ad214d977&libraries=services"></script>
+    <title>바로잇 (BaroEat)</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=YOUR_APP_KEY"></script>
+    <script src="https://cdn.iamport.kr/v1/iamport.js"></script>
     <style>
-        @keyframes bounce-gentle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
-        .bounce-gentle { animation: bounce-gentle 1.5s infinite; }
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
     </style>
 </head>
-<body class="bg-gray-50 font-sans">
 
-    <div id="app" class="min-h-screen flex flex-col">
-        <header id="header-container"></header>
-        <main id="view-container" class="flex-grow"></main>
-        <footer class="bg-gradient-to-r from-orange-900 to-red-900 text-white py-12 mt-16">
-            <div class="container mx-auto px-4">
-                <div class="grid md:grid-cols-4 gap-8">
-                    <div>
-                        <div class="flex items-center space-x-3 mb-4">
-                            <div class="w-10 h-10 rounded-lg bounce-gentle bg-yellow-400 flex items-center justify-center text-xl font-bold text-orange-900">잇</div>
-                            <span class="font-bold text-xl">바로잇</span>
-                        </div>
-                        <p class="text-sm text-orange-100">새로운 식사 경험의 시작</p>
-                    </div>
-                    <div>
-                        <h4 class="font-bold mb-4 text-orange-200">서비스</h4>
-                        <button class="block text-sm text-orange-100 hover:text-yellow-300" onclick="handleNavigate('home')">실시간 예약</button>
-                    </div>
-                    <div>
-                        <h4 class="font-bold mb-4 text-orange-200">고객지원</h4>
-                        <p class="text-sm text-orange-100">고객센터</p>
-                    </div>
-                    <div>
-                        <h4 class="font-bold mb-4 text-orange-200">계정</h4>
-                        <button class="block text-sm text-orange-100 hover:text-yellow-300" onclick="handleNavigate('login')">로그인</button>
-                        <button class="block text-sm text-orange-100 hover:text-yellow-300" onclick="handleNavigate('signup')">회원가입</button>
-                    </div>
-                </div>
+<body class="bg-gray-100 h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-white shadow-md p-4 flex justify-between items-center z-10">
+        <h1 class="text-2xl font-bold text-orange-600 cursor-pointer" onclick="handleNavigate('home')">바로잇</h1>
+        <div id="auth-buttons">
+            <!-- 로그인 상태에 따라 버튼 변경 -->
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex overflow-hidden relative">
+        <!-- Sidebar (Store List) -->
+        <aside id="sidebar" class="w-1/3 bg-white border-r overflow-y-auto hidden md:block z-10">
+            <div class="p-4 border-b">
+                <h2 class="text-xl font-bold">내 주변 맛집</h2>
             </div>
-        </footer>
-    </div>
+            <div id="store-list-sidebar">
+                <div class="p-4 text-center text-gray-500">매장을 불러오는 중...</div>
+            </div>
+        </aside>
+
+        <!-- Map Area -->
+        <div id="map" class="flex-1 bg-gray-200 relative z-0">
+            <!-- 지도 -->
+        </div>
+
+        <!-- View Container -->
+        <div id="view-container" class="absolute inset-0 bg-white z-20 hidden overflow-y-auto">
+            <!-- 동적으로 뷰가 렌더링 됩니다 -->
+        </div>
+    </main>
 
     <script>
-    let currentView = 'home';
-    let currentUser = null;
-    let currentStoreId = null;
-    const headerContainer = document.getElementById('header-container');
-    const viewContainer = document.getElementById('view-container');
-    const apiUrl = '/api/auth';
+        // --- State Management ---
+        let currentView = 'home';
+        let currentUser = null;
+        let currentStoreId = null;
+        let selectedMenus = {};
+        let menuData = [];
+        let currentTablePrice = 0;
+        let notifiedReservations = new Set(); // To prevent duplicate alerts
+        const apiUrl = '/api/auth';
 
-    function handleNavigate(page, id = null) {
-        currentView = page;
-        currentStoreId = id;
-        render();
-    }
-function toggleCategory(cleanId) {
-    const contentElement = document.getElementById(`category-content-${cleanId}`);
-    
-    if (contentElement) {
-        // Tailwind CSS의 'hidden' 클래스를 토글하여 숨기거나 보이게 합니다.
-        contentElement.classList.toggle('hidden'); 
-        
-        // (선택 사항) 제목 옆에 펼쳐짐/접힘 상태를 표시할 수 있습니다.
-        const titleElement = document.getElementById(`category-title-${cleanId}`);
-        if (titleElement) {
-             // 텍스트를 변경하여 사용자에게 상태를 알려줍니다.
-            if (contentElement.classList.contains('hidden')) {
-                titleElement.innerHTML = titleElement.innerHTML.replace('(접기)', '(펼치기)');
-            } else {
-                titleElement.innerHTML = titleElement.innerHTML.replace('(펼치기)', '(접기)');
-            }
-        }
-    }
-}
-    function renderHeader() {
-        if (currentView === 'login' || currentView === 'signup') {
-            headerContainer.innerHTML = ''; return;
-        }
-        const authButtons = currentUser
-            ? `<div class="flex items-center space-x-4">
-                   <span class="font-medium text-gray-700">${currentUser}님</span>
-                   <button onclick="handleNavigate('mypage')" class="bg-gray-200 text-gray-600 px-3 py-1 rounded-full text-sm font-semibold hover:bg-gray-300">마이페이지</button>
-                   <button onclick="handleLogout()" class="bg-gray-200 text-gray-600 px-3 py-1 rounded-full text-sm font-semibold hover:bg-gray-300">로그아웃</button>
-               </div>`
-            : `<button onclick="handleNavigate('login')" class="bg-orange-500 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-orange-600">로그인 / 가입</button>`;
+        // PortOne Init
+        IMP.init('imp82508375');
 
-        headerContainer.innerHTML = `
-            <div class="sticky top-0 z-50 bg-white shadow-md">
-                <div class="container mx-auto px-4 py-4 flex items-center justify-between">
-                    <div class="flex items-center space-x-3 cursor-pointer" onclick="handleNavigate('home')">
-                        <div class="w-8 h-8 rounded-lg bounce-gentle bg-yellow-400 flex items-center justify-center text-lg font-bold text-orange-900">잇</div>
-                        <span class="font-bold text-xl text-orange-600">바로잇</span>
-                    </div>
-                    <div class="flex items-center space-x-4">${authButtons}</div>
-                </div>
-            </div>`;
-    }
-
-    function renderView() {
-        switch (currentView) {
-            case 'home':
-                viewContainer.innerHTML = `
-                    <div class="container mx-auto px-4 py-8">
-                        <section class="text-center py-24 bg-white rounded-xl shadow-lg">
-                            <h1 class="text-5xl font-extrabold mb-4 text-orange-600">바로 예약하고 바로 잇자!</h1>
-                            <p class="text-lg text-gray-600 mb-8">바로잇.</p>
-                            <button onclick="handleNavigate('store-list')" 
-                                    class="bg-orange-500 text-white px-6 py-3 rounded-full text-lg font-semibold hover:bg-orange-600">
-                                매장 찾으러 가기
-                            </button>
-                        </section>
-                    </div>`;
-                break;
-            
-            case 'store-list':
-                viewContainer.innerHTML = `
-                    <div class="container mx-auto px-4 py-8">
-                        <h1 class="text-3xl font-bold mb-6 text-orange-600">주변 매장 찾기</h1>
-                        <div class="flex flex-col md:flex-row gap-6">
-                            <div id="map" class="w-full md:w-2/3 h-[600px] rounded-lg shadow-md"></div>
-                            <div id="store-list-sidebar" class="w-full md:w-1/3 h-[600px] overflow-y-auto bg-white p-4 rounded-lg shadow-md">
-                                <p>매장을 불러오는 중입니다...</p>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                setTimeout(loadStoresAndMap, 10); 
-                break;
-
-            case 'store-detail':
-                viewContainer.innerHTML = `
-                    <div class="container mx-auto px-4 py-8 max-w-lg">
-                        <div id="store-detail-content" class="bg-white p-8 rounded-xl shadow-lg">
-                            <p class="text-lg text-gray-600">매장 상세 정보를 불러오는 중입니다...</p>
-                        </div>
-                        <button onclick="handleNavigate('store-list')" 
-                                class="mt-6 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300">
-                            &larr; 목록으로 돌아가기
-                        </button>
-                    </div>
-                `;
-                loadStoreDetail(); 
-                break;
-                //매장 메뉴 목록 (카테고리) 뷰
-            case 'store-menu':
-                viewContainer.innerHTML = `
-                    <div class="container mx-auto px-4 py-8 max-w-2xl">
-                        <div id="menu-category-content" class="bg-white p-8 rounded-xl shadow-lg">
-                            <p class="text-lg text-gray-600">메뉴 카테고리를 불러오는 중입니다...</p>
-                        </div>
-                        <button onclick="handleNavigate('store-detail', currentStoreId)" 
-                            class="mt-6 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300">
-                            &larr; 매장 상세 정보로 돌아가기
-                        </button>
-                    </div>
-                `;
-                loadStoreMenu(); 
-                break;
-                // 상품 상세 정보 뷰
-                case 'product-detail':
-                viewContainer.innerHTML = `
-                    <div class="container mx-auto px-4 py-8 max-w-lg">
-                        <div id="product-detail-content" class="bg-white p-8 rounded-xl shadow-lg">
-                            <p class="text-lg text-gray-600">상품 상세 정보를 불러오는 중입니다...</p>
-                        </div>
-                        <button onclick="window.history.back()" 
-                            class="mt-6 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300">
-                            &larr; 이전 화면으로 돌아가기
-                        </button>
-                    </div>
-                `;
-                loadProductDetail();
-                break;
-            case 'login':
-                viewContainer.innerHTML = `
-                    <div class="container mx-auto py-16 max-w-md">
-                        <div class="bg-white p-8 rounded-xl shadow-lg">
-                            <h2 class="text-3xl font-bold mb-6 text-center text-orange-600">로그인</h2>
-                            <div class="space-y-6">
-                                <input type="email" id="login-email" placeholder="이메일 (아이디)" class="w-full p-3 border rounded-lg">
-                                <input type="password" id="login-password" placeholder="비밀번호" class="w-full p-3 border rounded-lg">
-                                <button onclick="handleBackendLogin()" class="w-full bg-orange-500 text-white p-3 rounded-lg font-bold hover:bg-orange-600">로그인</button>
-                                <p id="login-message" class="text-center text-sm text-red-500 h-4"></p>
-
-                                <div class="relative my-4">
-                                    <div class="absolute inset-0 flex items-center">
-                                        <div class="w-full border-t border-gray-300"></div>
-                                    </div>
-                                    <div class="relative flex justify-center text-sm">
-                                        <span class="bg-white px-2 text-gray-500">또는</span>
-                                    </div>
-                                </div>
-
-                                <a href="/oauth2/authorization/kakao" 
-                                   class="block w-full bg-[#FEE500] text-black p-3 rounded-lg font-bold hover:bg-yellow-400 text-center">
-                                    카카오로 로그인하기
-                                </a>
-                                <div class="text-center text-sm">
-                                    <button class="text-gray-500 hover:text-orange-500" onclick="handleNavigate('signup')">아직 계정이 없으신가요? 회원가입</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>`;
-                break;
-
-            case 'signup':
-                viewContainer.innerHTML = `
-                    <div class="container mx-auto py-16 max-w-md">
-                        <div class="bg-white p-8 rounded-xl shadow-lg">
-                            <h2 class="text-3xl font-bold mb-6 text-center text-orange-600">회원가입</h2>
-                            <div class="space-y-4">
-                                <input type="text" id="signup-user-name" placeholder="이름" class="w-full p-3 border rounded-lg">
-                                <input type="email" id="signup-email" placeholder="이메일 (아이디)" class="w-full p-3 border rounded-lg">
-                                <input type="tel" id="signup-phone-number" placeholder="휴대폰 번호" class="w-full p-3 border rounded-lg">
-                                <input type="password" id="signup-password" placeholder="비밀번호" class="w-full p-3 border rounded-lg">
-                                <button onclick="handleBackendSignup()" class="w-full bg-orange-500 text-white p-3 rounded-lg font-bold hover:bg-orange-600">회원가입 완료</button>
-                                <p id="signup-message" class="text-center text-sm text-red-500 h-4"></p>
-                            </div>
-                        </div>
-                    </div>`;
-                break;
-
-            // [수정] 'mypage' 케이스의 내용을 구현합니다.
-            case 'mypage':
-                viewContainer.innerHTML = `
-                    <div class="container mx-auto py-16 max-w-md">
-                        <div class="bg-white p-8 rounded-xl shadow-lg">
-                            <h2 class="text-3xl font-bold mb-6 text-center text-orange-600">마이페이지</h2>
-                            <div class="space-y-4">
-                                <p class="text-lg">
-                                    <strong>이메일:</strong> 
-                                    <span id="mypage-email" class="text-gray-700">불러오는 중...</span>
-                                </p>
-                                
-                                <hr class="my-6 pt-4">
-                                
-                                <h3 class="text-2xl font-bold mb-2">회원 탈퇴</h3>
-                                <p class="text-sm text-gray-600 mb-4">
-                                    탈퇴 시 모든 정보가 삭제되며 복구할 수 없습니다. 
-                                    (소셜 로그인은 연결만 해제됩니다)
-                                </p>
-                                <input type="password" id="withdraw-password" placeholder="비밀번호 확인" class="w-full p-3 border rounded-lg">
-                                <button onclick="handleWithdraw()" class="w-full bg-red-500 text-white p-3 rounded-lg font-bold hover:bg-red-600">회원 탈퇴</button>
-                                <p id="mypage-message" class="text-center text-sm text-red-500 h-4"></p>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                // 뷰가 렌더링된 후 사용자 정보를 불러옵니다.
-                loadMyPageInfo();
-                break;
-        }
-    }
-
-    async function render() {
-        if (currentUser === null) {
-            await checkLoginStatus();
-        }
-        renderHeader();
-        renderView();
-    }
-
-    async function loadStoresAndMap() {
-        const mapContainer = document.getElementById('map');
-        const mapOption = {
-            center: new kakao.maps.LatLng(35.148, 129.038),
-            level: 4
+        // Category-based estimated time (in minutes)
+        const categoryTimeMap = {
+            '국밥': 10,
+            '찌개': 15,
+            '볶음': 15,
+            '사이드': 5,
+            '음료': 0,
+            '주류': 0,
+            '기타': 10
         };
-        const map = new kakao.maps.Map(mapContainer, mapOption);
-        const listSidebar = document.getElementById('store-list-sidebar');
 
-        try {
-            // [백엔드 연결] /api/stores (GET)
-            const response = await fetch('/api/stores'); 
-            if (!response.ok) throw new Error('서버에서 매장 목록을 가져오지 못했습니다.');
-            
-            const stores = await response.json();
-            
-            if (stores.length === 0) {
-                listSidebar.innerHTML = '<p>주변에 등록된 매장이 없습니다.</p>';
-                return;
+        // --- Navigation Handler ---
+        function handleNavigate(view, param = null) {
+            currentView = view;
+            if (view === 'store-detail') currentStoreId = param;
+            if (view === 'reservation') {
+                selectedMenus = {};
+                currentTablePrice = 0;
+            }
+            render();
+        }
+
+        // --- Render Function ---
+        function render() {
+            const viewContainer = document.getElementById('view-container');
+            const sidebar = document.getElementById('sidebar');
+            const map = document.getElementById('map');
+            const authButtons = document.getElementById('auth-buttons');
+
+            // Auth Buttons
+            if (currentUser) {
+                authButtons.innerHTML = `
+                    <span class="mr-4 text-gray-700">안녕하세요, ${currentUser}님</span>
+                    <button onclick="handleNavigate('mypage')" class="text-gray-600 hover:text-orange-600 mr-4">마이페이지</button>
+                    <button onclick="handleLogout()" class="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300">로그아웃</button>
+                `;
+            } else {
+                authButtons.innerHTML = `
+                    <button onclick="handleNavigate('login')" class="text-gray-600 hover:text-orange-600 mr-4">로그인</button>
+                    <button onclick="handleNavigate('signup')" class="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600">회원가입</button>
+                `;
             }
 
-            listSidebar.innerHTML = ''; 
+            // View Routing
+            if (currentView === 'home') {
+                viewContainer.classList.add('hidden');
+                sidebar.classList.remove('hidden');
+                map.classList.remove('hidden');
+                loadStoresAndMap();
+            } else if (currentView === 'login') {
+                viewContainer.classList.remove('hidden');
+                viewContainer.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full p-4">
+                        <div class="w-full max-w-md bg-white p-8 rounded-lg shadow-lg">
+                            <h2 class="text-2xl font-bold mb-6 text-center">로그인</h2>
+                            <input type="email" id="login-email" placeholder="이메일" class="w-full p-3 mb-4 border rounded">
+                            <input type="password" id="login-password" placeholder="비밀번호" class="w-full p-3 mb-6 border rounded">
+                            <button onclick="handleBackendLogin()" class="w-full bg-orange-500 text-white p-3 rounded font-bold mb-4">로그인</button>
+                            <a href="/oauth2/authorization/kakao" class="block w-full bg-yellow-400 text-black p-3 rounded font-bold text-center mb-4">카카오 로그인</a>
+                            <button onclick="handleNavigate('home')" class="w-full text-gray-500">취소</button>
+                            <p id="login-message" class="text-red-500 mt-4 text-center"></p>
+                        </div>
+                    </div>
+                `;
+            } else if (currentView === 'signup') {
+                viewContainer.classList.remove('hidden');
+                viewContainer.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full p-4">
+                        <div class="w-full max-w-md bg-white p-8 rounded-lg shadow-lg">
+                            <h2 class="text-2xl font-bold mb-6 text-center">회원가입</h2>
+                            <input type="text" id="signup-user-name" placeholder="이름" class="w-full p-3 mb-4 border rounded">
+                            <input type="email" id="signup-email" placeholder="이메일" class="w-full p-3 mb-4 border rounded">
+                            <input type="tel" id="signup-phone-number" placeholder="전화번호" class="w-full p-3 mb-4 border rounded">
+                            <input type="password" id="signup-password" placeholder="비밀번호" class="w-full p-3 mb-6 border rounded">
+                            <button onclick="handleBackendSignup()" class="w-full bg-orange-500 text-white p-3 rounded font-bold mb-4">가입하기</button>
+                            <button onclick="handleNavigate('home')" class="w-full text-gray-500">취소</button>
+                            <p id="signup-message" class="text-red-500 mt-4 text-center"></p>
+                        </div>
+                    </div>
+                `;
+            } else if (currentView === 'mypage') {
+                viewContainer.classList.remove('hidden');
+                viewContainer.innerHTML = `
+                    <div class="max-w-2xl mx-auto p-6">
+                        <h2 class="text-3xl font-bold mb-6">마이페이지</h2>
+                        <div class="bg-white p-6 rounded-lg shadow mb-6">
+                            <div class="space-y-4">
+                                <div class="flex justify-between border-b pb-4">
+                                    <span class="font-bold text-gray-600">이메일</span>
+                                    <span id="mypage-email" class="text-gray-800">로딩중...</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white p-6 rounded-lg shadow">
+                            <h3 class="text-xl font-bold mb-4 text-red-600">회원 탈퇴</h3>
+                            <p class="text-gray-600 mb-4">탈퇴 시 모든 정보가 삭제되며 복구할 수 없습니다.</p>
+                            <input type="password" id="withdraw-password" placeholder="비밀번호 확인" class="w-full p-2 border rounded mb-4">
+                            <button onclick="handleWithdraw()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">회원 탈퇴</button>
+                            <p id="mypage-message" class="text-red-500 mt-2"></p>
+                        </div>
+                        <button onclick="handleNavigate('home')" class="mt-6 text-gray-500 underline">메인으로 돌아가기</button>
+                    </div>
+                `;
+                loadMyPageInfo();
+            } else if (currentView === 'store-detail') {
+                viewContainer.classList.remove('hidden');
+                viewContainer.innerHTML = `
+                    <div class="max-w-4xl mx-auto p-4">
+                        <button onclick="handleNavigate('home')" class="mb-4 text-gray-600">← 뒤로가기</button>
+                        <div id="store-detail-content" class="bg-white p-6 rounded-lg shadow">
+                            Loading...
+                        </div>
+                    </div>
+                `;
+                loadStoreDetail();
+            } else if (currentView === 'store-menu') {
+                viewContainer.classList.remove('hidden');
+                viewContainer.innerHTML = `
+                    <div class="max-w-4xl mx-auto p-4">
+                        <button onclick="handleNavigate('store-detail', currentStoreId)" class="mb-4 text-gray-600">← 뒤로가기</button>
+                        <div id="menu-category-content" class="bg-white p-6 rounded-lg shadow">
+                            Loading...
+                        </div>
+                    </div>
+                `;
+                loadStoreMenu();
+            } else if (currentView === 'reservation') {
+                viewContainer.classList.remove('hidden');
+                viewContainer.innerHTML = `
+                    <div class="max-w-4xl mx-auto p-4">
+                        <button onclick="handleNavigate('store-detail', currentStoreId)" class="mb-4 text-gray-600">← 뒤로가기</button>
+                        <div class="bg-white p-6 rounded-lg shadow">
+                            <h2 class="text-2xl font-bold mb-6">테이블 및 메뉴 예약</h2>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <h3 class="text-lg font-bold mb-4 border-b pb-2">1. 예약 정보</h3>
+                                    <div class="mb-4">
+                                        <label class="block font-bold mb-2">날짜 선택</label>
+                                        <input type="date" id="res-date" class="w-full p-2 border rounded" onchange="loadAvailableTimes()">
+                                    </div>
+                                    <div class="mb-4">
+                                        <label class="block font-bold mb-2">시간 선택</label>
+                                        <select id="res-time" class="w-full p-2 border rounded" disabled onchange="loadAvailableTables()">
+                                            <option value="">날짜를 먼저 선택하세요</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-4">
+                                        <label class="block font-bold mb-2">인원 수</label>
+                                        <select id="res-party-size" class="w-full p-2 border rounded" onchange="loadAvailableTables()">
+                                            <option value="1">1명</option>
+                                            <option value="2">2명</option>
+                                            <option value="3">3명</option>
+                                            <option value="4">4명</option>
+                                            <option value="5">5명</option>
+                                            <option value="6">6명</option>
+                                            <option value="7">7명</option>
+                                            <option value="8">8명</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-4">
+                                        <label class="block font-bold mb-2">테이블 선택</label>
+                                        <div id="res-table-list" class="grid grid-cols-1 gap-4 border p-4 rounded min-h-[100px] max-h-[300px] overflow-y-auto">
+                                            <p class="text-gray-500">날짜, 시간, 인원을 선택하면 가능한 테이블이 표시됩니다.</p>
+                                        </div>
+                                        <input type="hidden" id="res-table-id">
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-bold mb-4 border-b pb-2">2. 메뉴 선택</h3>
+                                    <div id="menu-categories" class="flex space-x-2 overflow-x-auto pb-2 mb-4 scrollbar-hide">
+                                        <!-- Categories will be loaded here -->
+                                    </div>
+                                    <div id="menu-list" class="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+                                        <p class="text-gray-500">메뉴를 불러오는 중...</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-8 border-t pt-6">
+                                <div class="mb-6">
+                                    <h3 class="text-lg font-bold mb-2">3. 결제 수단 선택</h3>
+                                    <div class="flex space-x-4">
+                                        <label class="flex items-center space-x-2 cursor-pointer">
+                                            <input type="radio" name="payment-method" value="ON_SITE" checked class="form-radio text-orange-600">
+                                            <span>현장 결제</span>
+                                        </label>
+                                        <label class="flex items-center space-x-2 cursor-pointer">
+                                            <input type="radio" name="payment-method" value="CARD" class="form-radio text-orange-600">
+                                            <span>카드 결제 (테스트)</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between items-center mb-4">
+                                    <div class="text-gray-600">
+                                        <p>예상 준비 시간: <span id="est-time" class="font-bold text-orange-600">0분</span></p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-sm text-gray-500">테이블 비용 + 메뉴 비용</p>
+                                        <p class="text-3xl font-bold text-orange-600" id="total-price">0원</p>
+                                    </div>
+                                </div>
+                                <button type="button" onclick="handleReservationSubmit(event)" class="w-full bg-orange-600 text-white py-4 rounded-lg font-bold text-xl hover:bg-orange-700 shadow-lg">
+                                    예약 및 결제 확정하기
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('res-date').min = today;
+                loadReservationMenus();
+            }
+        }
 
-            stores.forEach(store => {
-                const lat = parseFloat(store.lat);
-                const lng = parseFloat(store.lng);
+        // --- API Calls & Logic ---
 
-                if (!isNaN(lat) && !isNaN(lng)) {
-                    const position = new kakao.maps.LatLng(lat, lng);
+        window.onload = async () => {
+            await checkLoginStatus();
+            render();
+            // Start Notification Polling
+            setInterval(checkUpcomingReservations, 60000); // Check every minute
+        };
 
-                    const marker = new kakao.maps.Marker({
-                        position: position,
-                        title: store.storeName 
-                    });
-                    marker.setMap(map);
+        async function checkLoginStatus() {
+            try {
+                const response = await fetch('/api/auth/me');
+                if (response.ok) {
+                    currentUser = await response.text();
+                } else {
+                    currentUser = null;
+                }
+            } catch (e) {
+                currentUser = null;
+            }
+        }
 
-                    kakao.maps.event.addListener(marker, 'click', function() {
-                        handleNavigate('store-detail', store.id);
-                    });
+        async function loadStoresAndMap() {
+            const listSidebar = document.getElementById('store-list-sidebar');
+            let map = null;
 
+            if (typeof kakao !== 'undefined' && kakao.maps) {
+                const mapContainer = document.getElementById('map');
+                const mapOption = {
+                    center: new kakao.maps.LatLng(35.148, 129.038),
+                    level: 4
+                };
+                map = new kakao.maps.Map(mapContainer, mapOption);
+            }
+
+            try {
+                const response = await fetch('/api/stores');
+                if (!response.ok) throw new Error('서버에서 매장 목록을 가져오지 못했습니다.');
+                const stores = await response.json();
+
+                if (stores.length === 0) {
+                    listSidebar.innerHTML = '<p>주변에 등록된 매장이 없습니다.</p>';
+                    return;
+                }
+                listSidebar.innerHTML = '';
+                stores.forEach(store => {
+                    const lat = parseFloat(store.lat);
+                    const lng = parseFloat(store.lng);
+                    if (map && !isNaN(lat) && !isNaN(lng)) {
+                        const position = new kakao.maps.LatLng(lat, lng);
+                        const marker = new kakao.maps.Marker({ position: position, title: store.storeName });
+                        marker.setMap(map);
+                        kakao.maps.event.addListener(marker, 'click', function () { handleNavigate('store-detail', store.id); });
+                    }
                     const storeEl = document.createElement('div');
                     storeEl.className = 'p-4 border-b hover:bg-gray-100 cursor-pointer';
-                    storeEl.onclick = () => handleNavigate('store-detail', store.id); 
-                    
-                    storeEl.innerHTML = `
-                        <h3 class="font-bold text-lg">${store.storeName}</h3>
-                        <p class="text-sm text-gray-600">${store.address}</p>
-                    `;
+                    storeEl.onclick = () => handleNavigate('store-detail', store.id);
+                    storeEl.innerHTML = `<h3 class="font-bold text-lg">${store.storeName}</h3><p class="text-sm text-gray-600">${store.address}</p>`;
                     listSidebar.appendChild(storeEl);
-                }
-            });
-
-            if (stores.length > 0) {
-                const firstLat = parseFloat(stores[0].lat);
-                const firstLng = parseFloat(stores[0].lng);
-                if (!isNaN(firstLat) && !isNaN(firstLng)) {
-                    map.setCenter(new kakao.maps.LatLng(firstLat, firstLng));
-                }
-            }
-        } catch (error) {
-            console.error(error);
-            listSidebar.innerHTML = `<p class="text-red-500">오류: ${error.message}</p>`;
-        }
-    }
-
-    async function loadStoreDetail() {
-        const contentEl = document.getElementById('store-detail-content');
-        
-        if (currentStoreId === null) {
-            contentEl.innerHTML = '<p class="text-red-500">오류: 매장 ID가 없습니다.</p>';
-            return;
-        }
-
-        try {
-             // [백엔드 연결] /api/stores/{id} (GET)
-            const response = await fetch(`/api/stores/${currentStoreId}`);
-            if (!response.ok) throw new Error('서버에서 매장 정보를 가져오지 못했습니다.');
-            
-            const store = await response.json();
-
-            const openStatusText = store.isOpen 
-                ? '<span class="text-green-600 font-bold">영업 중</span>' 
-                : '<span class="text-red-600 font-bold">영업 종료</span>';
-
-            contentEl.innerHTML = `
-                     <h1 class="text-4xl font-extrabold mb-4 text-orange-600">${store.storeName}</h1>
-                    <div class="space-y-3">
-                        <p class="text-lg text-gray-700">
-                        <strong>주소:</strong> ${store.address}
-                     </p>
-                    <p class="text-lg text-gray-700">
-                    <strong>전화번호:</strong> ${store.phoneNumber}
-                     </p>
-                     <p class="text-lg text-gray-700 mb-6">
-                     <strong>영업상태:</strong> ${openStatusText}
-                      </p>
-                    
-                   <button onclick="handleNavigate('store-menu', ${store.id})" 
-                     class="w-full bg-orange-500 text-white p-3 rounded-lg font-bold hover:bg-orange-600 transition duration-150 ease-in-out">
-                    메뉴 보기
-                    </button>
-                    
-                    </div>
-     `;
-            // (예약 기능은 여기에 추가 구현 필요)
-
-        } catch (error) {
-            console.error(error);
-            contentEl.innerHTML = `<p class="text-red-500">오류: ${error.message}</p>`;
-        }
-    }
-async function loadStoreMenu() {
-    const contentEl = document.getElementById('menu-category-content');
-    
-    if (currentStoreId === null) {
-        contentEl.innerHTML = '<p class="text-red-500">오류: 매장 ID가 없습니다.</p>';
-        return;
-    }
-
-    try {
-        // [백엔드 연결] /api/stores/{id}/products (GET)
-        const response = await fetch(`/api/stores/${currentStoreId}/products`);
-        if (!response.ok) throw new Error('메뉴 목록을 가져오지 못했습니다.');
-        
-        const products = await response.json();
-
-        // 매장 이름 로드
-        const storeResponse = await fetch(`/api/stores/${currentStoreId}`);
-        const store = await storeResponse.json();
-        
-        let htmlContent = `<h1 class="text-4xl font-extrabold mb-6 text-orange-600">${store.storeName} 메뉴</h1>`;
-        
-        if (products.length === 0) {
-            htmlContent += '<p class="text-lg text-gray-600">등록된 메뉴가 없습니다.</p>';
-        } else {
-            // 2. 카테고리별로 상품 그룹화
-            const categories = products.reduce((acc, product) => {
-                const category = product.category || '기타 메뉴'; 
-                if (!acc[category]) {
-                    acc[category] = [];
-                }
-                acc[category].push(product);
-                return acc;
-            }, {});
-
-            // 3. 화면에 출력
-            let index = 0; // [수정] 고유 번호를 매기기 위한 변수
-
-            for (const category in categories) {
-                // [수정] 한글 이름 대신, 'cat-0', 'cat-1' 처럼 안전한 숫자 ID를 사용합니다.
-                const uniqueId = `cat-${index}`; 
-                index++; // 다음 번호를 위해 1 증가
-                
-                htmlContent += `
-                    <h2 
-                        class="text-2xl font-bold mt-8 mb-4 border-b pb-2 cursor-pointer text-orange-600 hover:text-orange-800 transition duration-150 flex justify-between items-center"
-                        onclick="toggleCategory('${uniqueId}')"
-                        id="category-title-${uniqueId}"
-                    >
-                        <span>${category}</span>
-                        <span class="text-sm text-gray-400">▼</span>
-                    </h2>
-                    
-                    <div id="category-content-${uniqueId}" class="space-y-2 hidden"> 
-                `;
-                
-                categories[category].forEach(product => {
-                    htmlContent += `
-                        <div class="flex justify-between items-start p-3 border-b last:border-b-0 hover:bg-gray-50 cursor-pointer" 
-                            onclick="handleNavigate('product-detail', ${product.id})">
-                            
-                            <div class="flex-grow pr-4"> 
-                                <h3 class="font-semibold text-lg">${product.name}</h3>
-                                <p class="text-sm text-gray-500 line-clamp-2">${product.description || '상세 설명 없음'}</p>
-                                <span class="text-orange-600 font-bold mt-1 block">${product.price.toLocaleString()}원</span>
-                            </div>
-                            
-                            <img src="${product.imageUrl || 'https://via.placeholder.com/80x80?text=NO+IMAGE'}" 
-                                alt="${product.name}" 
-                                class="w-20 h-20 object-cover rounded-lg shadow-sm flex-shrink-0" />
-                        </div>
-                    `;
                 });
-                
-                htmlContent += `</div>`; // 카테고리 닫기
+                if (map && stores.length > 0) {
+                    map.setCenter(new kakao.maps.LatLng(parseFloat(stores[0].lat), parseFloat(stores[0].lng)));
+                }
+            } catch (error) {
+                console.error(error);
+                listSidebar.innerHTML = `<p class="text-red-500">Error: ${error.message}</p>`;
             }
         }
-        
-        contentEl.innerHTML = htmlContent;
-    }
-    catch (error) {
-        console.error('메뉴 로딩 오류:', error);
-        contentEl.innerHTML = `<p class="text-red-500">오류: 메뉴 정보를 불러올 수 없습니다. (${error.message})</p>`;
-    }
-}
 
-async function loadProductDetail() {
-    const contentEl = document.getElementById('product-detail-content');
-    const productId = currentStoreId; // currentStoreId 변수를 상품 ID로 재활용
-    
-    if (productId === null) {
-        contentEl.innerHTML = '<p class="text-red-500">오류: 상품 ID가 없습니다.</p>';
-        return;
-    }
+        async function loadStoreDetail() {
+            if (!currentStoreId) return;
+            const contentEl = document.getElementById('store-detail-content');
+            try {
+                const storeResponse = await fetch(`/api/stores/${currentStoreId}`);
+                const store = await storeResponse.json();
+                contentEl.innerHTML = `
+                    <h2 class="text-3xl font-bold mb-4 text-orange-600">${store.storeName}</h2>
+                    <p class="text-gray-600 mb-4">${store.address}</p>
+                    <p class="text-gray-600 mb-6">${store.phoneNumber || '전화번호 없음'}</p>
+                    <div class="flex space-x-4">
+                        <button onclick="handleNavigate('store-menu', currentStoreId)" class="flex-1 bg-orange-500 text-white p-3 rounded-lg font-bold hover:bg-orange-600">메뉴 보기</button>
+                        <button onclick="handleNavigate('reservation', currentStoreId)" class="flex-1 bg-green-600 text-white p-3 rounded-lg font-bold hover:bg-green-700">테이블 예약하기</button>
+                    </div>`;
+            } catch (e) { contentEl.innerHTML = '<p class="text-red-500">오류 발생.</p>'; }
+        }
 
-    try {
-        // [백엔드 연결] /api/stores/products/{productId} (GET)
-        const response = await fetch(`/api/stores/products/${productId}`);
-        if (!response.ok) throw new Error('상품 상세 정보를 가져오지 못했습니다.');
-        
-        const product = await response.json();
-        
-        // 상품이 속한 매장 정보를 가져와서 메뉴로 돌아갈 때 사용 (선택 사항)
-        const storeResponse = await fetch(`/api/stores/${product.storeId}`);
-        const store = await storeResponse.json();
-        
-        contentEl.innerHTML = `
-            <h1 class="text-3xl font-extrabold mb-2 text-orange-600">${product.name}</h1>
-            <h2 class="text-xl font-bold mb-6 text-gray-700">${product.price.toLocaleString()}원</h2>
-            
-            <p class="text-lg text-gray-700 mb-8">${product.description || '제공된 상세 설명이 없습니다.'}</p>
-            
-            <hr class="my-6">
-            
-            <div class="space-y-2 text-md text-gray-600">
-                <p><strong>매장:</strong> <span class="font-semibold">${store.storeName}</span></p>
-                <p><strong>카테고리:</strong> ${product.category || '분류 없음'}</p>
-            </div>
-            
-            <button class="w-full bg-red-500 text-white p-3 rounded-lg font-bold mt-8 hover:bg-red-600">
-                바로 주문하기
-            </button>
-        `;
-        
-        // 메뉴 목록으로 돌아갈 때 매장 ID를 전달하기 위해 currentStoreId를 다시 설정 (선택 사항)
-        currentStoreId = product.storeId; 
+        async function loadStoreMenu() {
+            if (!currentStoreId) return;
+            const contentEl = document.getElementById('menu-category-content');
+            try {
+                const response = await fetch(`/api/stores/${currentStoreId}/products`);
+                const products = await response.json();
+                contentEl.innerHTML = '<h3 class="text-2xl font-bold mb-4">메뉴</h3><div class="space-y-4">';
+                products.forEach(p => {
+                    contentEl.innerHTML += `<div class="flex justify-between items-center border-b pb-2"><div><h4 class="font-bold">${p.name}</h4><p class="text-sm text-gray-500">${p.description || ''}</p></div><span class="font-bold text-orange-600">${p.price.toLocaleString()}원</span></div>`;
+                });
+                contentEl.innerHTML += '</div>';
+            } catch (e) { contentEl.innerHTML = '<p class="text-red-500">오류 발생.</p>'; }
+        }
 
-    } catch (error) {
-        console.error('상품 상세 로딩 오류:', error);
-        contentEl.innerHTML = `<p class="text-red-500">오류: 상품 정보를 불러올 수 없습니다. (${error.message})</p>`;
-    }
-}
-    async function checkLoginStatus() {
-        try {
-            // [백엔드 연결] /api/auth/me (GET)
-            const response = await fetch(`${apiUrl}/me`);
-            currentUser = response.ok ? await response.text() : null;
-        } catch (e) { currentUser = null; }
-    }
+        async function loadReservationMenus() {
+            if (!currentStoreId) return;
+            const categoryEl = document.getElementById('menu-categories');
+            const listEl = document.getElementById('menu-list');
+            try {
+                const response = await fetch(`/api/stores/${currentStoreId}/products`);
+                menuData = await response.json();
+                const categories = [...new Set(menuData.map(p => p.category || '기타'))];
+                categoryEl.innerHTML = `<button onclick="filterMenu('all')" class="px-3 py-1 bg-orange-500 text-white rounded-full text-sm whitespace-nowrap">전체</button>`;
+                categories.forEach(cat => {
+                    categoryEl.innerHTML += `<button onclick="filterMenu('${cat}')" class="px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm whitespace-nowrap hover:bg-gray-300">${cat}</button>`;
+                });
+                filterMenu('all');
+            } catch (e) { listEl.innerHTML = '<p class="text-red-500">오류 발생.</p>'; }
+        }
 
-    async function handleBackendLogin() {
-        const email = document.getElementById('login-email').value;
-        const password = document.getElementById('login-password').value;
-        const msgEl = document.getElementById('login-message');
-        try {
-            // [백엔드 연결] /api/auth/login (POST)
-            const response = await fetch(`${apiUrl}/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
+        function filterMenu(category) {
+            const listEl = document.getElementById('menu-list');
+            listEl.innerHTML = '';
+            const filtered = category === 'all' ? menuData : menuData.filter(p => (p.category || '기타') === category);
+            filtered.forEach(p => {
+                const qty = selectedMenus[p.id] || 0;
+                const item = document.createElement('div');
+                item.className = 'flex justify-between items-center border-b pb-2';
+                item.innerHTML = `
+                    <div class="flex-1"><h4 class="font-bold">${p.name}</h4><p class="text-xs text-gray-500">${p.price.toLocaleString()}원</p></div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="updateMenuQty(${p.id}, -1)" class="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center font-bold">-</button>
+                        <span id="qty-${p.id}" class="w-4 text-center font-bold">${qty}</span>
+                        <button onclick="updateMenuQty(${p.id}, 1)" class="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center font-bold">+</button>
+                    </div>`;
+                listEl.appendChild(item);
             });
-
-            if (response.ok) {
-                currentUser = await response.text();
-                handleNavigate('home');
-            } else {
-                const errorText = await response.text();
-                console.error("Login failed:", errorText);
-                msgEl.textContent = '로그인 실패. 정보를 확인하세요.';
-            }
-        } catch (e) { 
-            console.error("Error during login:", e);
-            msgEl.textContent = '오류 발생.'; 
         }
-    }
 
-    async function handleBackendSignup() {
-        const signupData = {
-            userName: document.getElementById('signup-user-name').value,
-            email: document.getElementById('signup-email').value,
-            phoneNumber: document.getElementById('signup-phone-number').value,
-            password: document.getElementById('signup-password').value
-        };
-        const msgEl = document.getElementById('signup-message');
-        try {
-            // [백엔드 연결] /api/auth/register (POST)
-            const response = await fetch(`${apiUrl}/register`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(signupData)
+        function updateMenuQty(productId, delta) {
+            if (!selectedMenus[productId]) selectedMenus[productId] = 0;
+            selectedMenus[productId] += delta;
+            if (selectedMenus[productId] < 0) selectedMenus[productId] = 0;
+            document.getElementById(`qty-${productId}`).textContent = selectedMenus[productId];
+            updateTotalPrice();
+        }
+
+        function updateTotalPrice() {
+            let menuTotal = 0;
+            let estTime = 0;
+
+            for (const [pid, qty] of Object.entries(selectedMenus)) {
+                if (qty > 0) {
+                    const product = menuData.find(p => p.id == pid);
+                    if (product) {
+                        menuTotal += product.price * qty;
+                        // Calculate time based on category
+                        const cat = product.category || '기타';
+                        const timePerItem = categoryTimeMap[cat] || 10;
+                        estTime += timePerItem * qty;
+                    }
+                }
+            }
+
+            const total = currentTablePrice + menuTotal;
+            document.getElementById('total-price').textContent = total.toLocaleString() + '원';
+
+            // Base time 10 mins if any food ordered
+            if (estTime > 0) estTime += 10;
+            document.getElementById('est-time').textContent = estTime + '분';
+        }
+
+        async function handleBackendLogin() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            try {
+                const response = await fetch(`${apiUrl}/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
+                if (response.ok) { currentUser = await response.text(); handleNavigate('home'); }
+                else { document.getElementById('login-message').textContent = '로그인 실패.'; }
+            } catch (e) { console.error(e); }
+        }
+
+        async function handleBackendSignup() {
+            const data = { username: document.getElementById('signup-user-name').value, email: document.getElementById('signup-email').value, phoneNumber: document.getElementById('signup-phone-number').value, password: document.getElementById('signup-password').value, nickname: document.getElementById('signup-user-name').value };
+            try { const res = await fetch(`${apiUrl}/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); if (res.ok) { alert('가입 성공'); handleNavigate('login'); } } catch (e) { }
+        }
+
+        async function handleLogout() { await fetch('/api/auth/logout', { method: 'POST' }); currentUser = null; handleNavigate('home'); }
+
+        async function handleWithdraw() {
+            const password = document.getElementById('withdraw-password').value;
+            try { const res = await fetch('/user/withdraw', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }) }); if (res.ok) { alert(await res.text()); currentUser = null; handleNavigate('home'); } else { alert('탈퇴 실패'); } } catch (e) { }
+        }
+
+        async function loadMyPageInfo() {
+            const emailEl = document.getElementById('mypage-email');
+            try {
+                const response = await fetch('/user/mypage');
+                if (response.ok) {
+                    const data = await response.json();
+                    currentUser = data.email;
+                    emailEl.textContent = data.email;
+                }
+            } catch (e) { }
+
+            // Load Reservations
+            const reservationContainer = document.createElement('div');
+            reservationContainer.className = 'mt-8 border-t pt-6';
+            reservationContainer.innerHTML = '<h3 class="text-2xl font-bold mb-4 text-orange-600">나의 예약</h3><div id="my-reservations" class="space-y-4"><p>예약 내역을 불러오는 중...</p></div>';
+            const myPageContent = document.querySelector('#view-container .bg-white .space-y-4');
+            if (myPageContent) {
+                const oldRes = document.getElementById('my-reservations-container');
+                if (oldRes) oldRes.remove();
+                reservationContainer.id = 'my-reservations-container';
+                myPageContent.appendChild(reservationContainer);
+            }
+
+            try {
+                const response = await fetch('/api/reservations/my');
+                if (response.ok) {
+                    const reservations = await response.json();
+                    const listEl = document.getElementById('my-reservations');
+                    if (reservations.length === 0) listEl.innerHTML = '<p>예약 내역이 없습니다.</p>';
+                    else {
+                        listEl.innerHTML = '';
+                        reservations.forEach(res => {
+                            const item = document.createElement('div');
+                            item.className = 'p-4 border rounded-lg bg-gray-50 shadow-sm';
+
+                            let menuSummary = '';
+                            if (res.menus && res.menus.length > 0) {
+                                menuSummary = '<div class="mt-2 pt-2 border-t text-sm text-gray-600"><p class="font-bold">주문 메뉴:</p>';
+                                res.menus.forEach(m => { menuSummary += `<p>- ${m.name} x ${m.quantity} (${(m.price * m.quantity).toLocaleString()}원)</p>`; });
+                                menuSummary += '</div>';
+                            }
+
+                            // Payment Info
+                            const paymentInfo = res.paymentMethod ? `<p class="text-sm text-blue-600 font-bold">결제: ${res.paymentMethod === 'CARD' ? '카드 결제' : '현장 결제'} ${res.paymentTime ? '(' + res.paymentTime.replace('T', ' ').substring(0, 16) + ')' : ''}</p>` : '';
+
+                            item.innerHTML = `
+                                <div class="flex justify-between items-center mb-2">
+                                    <h4 class="font-bold text-lg text-orange-600">${res.storeName}</h4>
+                                    <span class="text-sm text-gray-500 bg-white px-2 py-1 rounded border">${res.date} ${res.time}</span>
+                                </div>
+                                <div class="text-gray-700">
+                                    <p><span class="font-semibold">테이블:</span> ${res.tableName}</p>
+                                    <p><span class="font-semibold">인원:</span> ${res.partySize}명</p>
+                                    ${menuSummary}
+                                    <div class="flex justify-between items-end mt-2">
+                                        ${paymentInfo}
+                                        <p class="font-bold text-lg text-red-600">총 결제금액: ${res.totalPrice.toLocaleString()}원</p>
+                                    </div>
+                                </div>
+                            `;
+                            const btnContainer = document.createElement('div');
+                            btnContainer.className = 'flex justify-end space-x-2 mt-2';
+                            btnContainer.innerHTML = `
+                                <button onclick="openModifyModal(${res.id}, '${res.date}', '${res.time}', ${res.partySize}, ${JSON.stringify(res.menus).replace(/"/g, '&quot;')})" class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600">변경</button>
+                                <button onclick="cancelReservation(${res.id})" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">취소</button>
+                                <button onclick='showReceipt(${JSON.stringify(res).replace(/'/g, "&#39;")})' class="bg-gray-500 text-white px-3 py-1 rounded text-sm hover:bg-gray-600">영수증</button>
+                            `;
+                            item.appendChild(btnContainer);
+                            listEl.appendChild(item);
+                        });
+                    }
+                }
+            } catch (e) { }
+        }
+
+        async function cancelReservation(id) {
+            if (!confirm('취소하시겠습니까?')) return;
+            await fetch(`/api/reservations/${id}`, { method: 'DELETE' });
+            loadMyPageInfo();
+        }
+
+        let currentModifyingId = null;
+        let modifyingMenus = {};
+        function openModifyModal(id, date, time, partySize, currentMenus) {
+            currentModifyingId = id; modifyingMenus = {};
+            if (currentMenus) currentMenus.forEach(m => modifyingMenus[m.id] = m.quantity);
+            let modal = document.getElementById('modify-modal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'modify-modal';
+                modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden';
+                modal.innerHTML = `
+                    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+                        <h3 class="text-xl font-bold mb-4">예약 변경</h3>
+                        <input type="date" id="mod-date" class="w-full p-2 border rounded mb-2">
+                        <input type="time" id="mod-time" class="w-full p-2 border rounded mb-2">
+                        <input type="number" id="mod-party-size" class="w-full p-2 border rounded mb-4" min="1">
+                        <div id="mod-menu-list" class="space-y-2 max-h-[200px] overflow-y-auto border p-2 rounded mb-4"></div>
+                        <div class="flex justify-end space-x-2">
+                            <button onclick="document.getElementById('modify-modal').classList.add('hidden')" class="bg-gray-300 px-4 py-2 rounded">취소</button>
+                            <button onclick="submitModification()" class="bg-blue-600 text-white px-4 py-2 rounded">변경 확정</button>
+                        </div>
+                    </div>`;
+                document.body.appendChild(modal);
+            }
+            document.getElementById('mod-date').value = date;
+            document.getElementById('mod-time').value = time;
+            document.getElementById('mod-party-size').value = partySize;
+            const listEl = document.getElementById('mod-menu-list');
+            if (menuData.length > 0) {
+                listEl.innerHTML = '';
+                menuData.forEach(p => {
+                    const qty = modifyingMenus[p.id] || 0;
+                    listEl.innerHTML += `<div class="flex justify-between items-center text-sm"><span>${p.name}</span><div class="flex items-center space-x-1"><button onclick="updateModMenuQty(${p.id}, -1)" class="px-2 bg-gray-200 rounded">-</button><span id="mod-qty-${p.id}">${qty}</span><button onclick="updateModMenuQty(${p.id}, 1)" class="px-2 bg-orange-200 rounded">+</button></div></div>`;
+                });
+            } else listEl.innerHTML = '메뉴 정보 없음';
+            modal.classList.remove('hidden');
+        }
+
+        function updateModMenuQty(pid, d) { modifyingMenus[pid] = (modifyingMenus[pid] || 0) + d; if (modifyingMenus[pid] < 0) modifyingMenus[pid] = 0; document.getElementById(`mod-qty-${pid}`).textContent = modifyingMenus[pid]; }
+
+        async function submitModification() {
+            const date = document.getElementById('mod-date').value;
+            const time = document.getElementById('mod-time').value;
+            const partySize = document.getElementById('mod-party-size').value;
+            const menus = [];
+            for (const [pid, qty] of Object.entries(modifyingMenus)) if (qty > 0) menus.push({ productId: parseInt(pid), quantity: qty });
+            await fetch(`/api/reservations/${currentModifyingId}`, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ date, time, partySize: parseInt(partySize), menus })
             });
-            if (response.ok) {
-                alert('회원가입 성공! 로그인 해주세요.');
-                handleNavigate('login');
-            } else {
-                msgEl.textContent = '회원가입 실패.';
+            document.getElementById('modify-modal').classList.add('hidden');
+            loadMyPageInfo();
+        }
+
+        async function loadAvailableTimes() {
+            const date = document.getElementById('res-date').value;
+            const timeSelect = document.getElementById('res-time');
+            try {
+                const res = await fetch(`/api/reservations/times?date=${date}`);
+                const times = await res.json();
+                timeSelect.innerHTML = '<option value="">시간 선택</option>';
+                times.forEach(t => {
+                    const opt = document.createElement('option'); opt.value = t.time; opt.textContent = `${t.time} (${t.status})`; if (t.status === 'full') opt.disabled = true;
+                    timeSelect.appendChild(opt);
+                });
+                timeSelect.disabled = false;
+            } catch (e) { }
+        }
+
+        async function loadAvailableTables() {
+            const date = document.getElementById('res-date').value;
+            const time = document.getElementById('res-time').value;
+            const partySize = document.getElementById('res-party-size').value;
+            const listEl = document.getElementById('res-table-list');
+            try {
+                const res = await fetch(`/api/reservations/tables?storeId=${currentStoreId}&date=${date}&time=${time}&partySize=${partySize}`);
+                const tables = await res.json();
+                listEl.innerHTML = '';
+                tables.forEach(t => {
+                    listEl.innerHTML += `<div class="p-3 border rounded hover:bg-orange-50 cursor-pointer flex justify-between items-center"><div><span class="font-bold">${t.name}</span> <span class="text-sm">(${t.capacity})</span></div><button onclick="selectTable(this.closest('div'), ${t.id}, ${t.price})" class="bg-orange-500 text-white text-xs px-3 py-1 rounded">선택</button></div>`;
+                });
+            } catch (e) { }
+        }
+
+        function selectTable(el, id, price) {
+            const siblings = el.parentElement.children;
+            for (let s of siblings) { s.classList.remove('bg-orange-100', 'border-orange-500'); s.querySelector('button').textContent = '선택'; s.querySelector('button').classList.replace('bg-green-600', 'bg-orange-500'); }
+            el.classList.add('bg-orange-100', 'border-orange-500');
+            el.querySelector('button').textContent = '선택됨';
+            el.querySelector('button').classList.replace('bg-orange-500', 'bg-green-600');
+            document.getElementById('res-table-id').value = id;
+            currentTablePrice = price;
+            updateTotalPrice();
+        }
+
+        async function handleReservationSubmit(event) {
+            if (event) event.preventDefault();
+
+            const date = document.getElementById('res-date').value;
+            const time = document.getElementById('res-time').value;
+            const partySize = document.getElementById('res-party-size').value;
+            const tableId = document.getElementById('res-table-id').value;
+            const paymentMethod = document.querySelector('input[name="payment-method"]:checked').value;
+
+            if (!date || !time || !tableId) { alert('정보를 모두 입력하세요.'); return; }
+            if (!currentUser) { alert('로그인 필요'); handleNavigate('login'); return; }
+
+            const menus = [];
+            for (const [pid, qty] of Object.entries(selectedMenus)) if (qty > 0) menus.push({ productId: parseInt(pid), quantity: qty });
+
+            // PortOne Payment Integration
+            if (paymentMethod === 'CARD') {
+                // Calculate total amount
+                let totalAmount = 0;
+                totalAmount += currentTablePrice;
+
+                for (const [pid, qty] of Object.entries(selectedMenus)) {
+                    if (qty > 0) {
+                        const product = menuData.find(p => p.id == pid);
+                        if (product) totalAmount += product.price * qty;
+                    }
+                }
+
+                IMP.request_pay({
+                    pg: "kakaopay",
+                    pay_method: "card",
+                    merchant_uid: "ORD" + new Date().getTime(),
+                    name: "바로잇 예약 결제",
+                    amount: totalAmount,
+                    buyer_email: currentUser,
+                    buyer_name: currentUser,
+                    buyer_tel: "010-1234-5678", // Optional
+                }, async function (rsp) {
+                    if (rsp.success) {
+                        // Payment Success - Verify with Backend
+                        try {
+                            const verifyRes = await fetch(`/api/payments/verify/${rsp.imp_uid}`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ imp_uid: rsp.imp_uid, merchant_uid: rsp.merchant_uid, amount: totalAmount })
+                            });
+                            const verifyData = await verifyRes.json();
+
+                            if (verifyRes.ok) {
+                                // Verification Success - Create Reservation
+                                createReservation(tableId, date, time, partySize, menus, paymentMethod, rsp.imp_uid);
+                            } else {
+                                alert('결제 검증 실패: ' + verifyData.message);
+                            }
+                        } catch (e) {
+                            alert('결제 검증 중 오류 발생');
+                        }
+                    } else {
+                        alert('결제 실패: ' + rsp.error_msg);
+                    }
+                });
+                return; // Stop here, wait for payment callback
             }
-        } catch (e) { msgEl.textContent = '오류 발생.'; }
-    }
 
-    // [수정] 로그아웃 함수 추가
-    async function handleLogout() {
-        try {
-            // [백엔드 연결] /api/auth/logout (POST)
-            const response = await fetch('/api/auth/logout', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-            });
+            // On-Site Payment
+            createReservation(tableId, date, time, partySize, menus, paymentMethod, null);
+        }
 
-            if (response.ok) {
-                currentUser = null; // 프론트엔드 상태 변경
-                alert('로그아웃되었습니다.');
-                handleNavigate('home'); // 홈으로 이동
-            } else {
-                alert('로그아웃 실패. 잠시 후 다시 시도하세요.');
+        async function createReservation(tableId, date, time, partySize, menus, paymentMethod, impUid) {
+            try {
+                const response = await fetch('/api/reservations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tableId, date, time, partySize: parseInt(partySize), menus, paymentMethod, impUid })
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    alert('예약이 완료되었습니다!');
+                    handleNavigate('mypage');
+                } else { alert('실패: ' + result.message); }
+            } catch (e) { alert('오류 발생: ' + e.message); }
+        }
+
+        // --- Receipt Modal ---
+        function showReceipt(res) {
+            let modal = document.getElementById('receipt-modal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'receipt-modal';
+                modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+                document.body.appendChild(modal);
             }
-        } catch (e) {
-            console.error('Logout error:', e);
-            alert('로그아웃 중 오류가 발생했습니다.');
-        }
-    }
-
-    // [수정] 마이페이지 정보 로드 함수 추가
-    async function loadMyPageInfo() {
-        const emailEl = document.getElementById('mypage-email');
-        const msgEl = document.getElementById('mypage-message');
-        try {
-            // [백엔드 연결] /user/mypage (GET)
-            const response = await fetch('/user/mypage');
-            
-            if (response.ok) {
-                const data = await response.json(); // { "email": "..." }
-                emailEl.textContent = data.email;
-            } else if (response.status === 401) {
-                // 로그인이 안 된 경우
-                alert('로그인이 필요합니다.');
-                handleNavigate('login');
-            } else {
-                msgEl.textContent = '정보를 불러오는데 실패했습니다.';
-            }
-        } catch (e) {
-            console.error('MyPage load error:', e);
-            msgEl.textContent = '페이지 로드 중 오류 발생.';
-        }
-    }
-
-    // [수정] 회원 탈퇴 함수 추가
-    async function handleWithdraw() {
-        const password = document.getElementById('withdraw-password').value;
-        const msgEl = document.getElementById('mypage-message');
-
-        if (!password) {
-            msgEl.textContent = '비밀번호를 입력해야 합니다.';
-            return;
-        }
-
-        if (!confirm('정말로 회원 탈퇴를 하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
-            return;
+            modal.innerHTML = `
+                <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+                    <div class="flex justify-between items-center mb-6 border-b pb-4">
+                        <h3 class="text-2xl font-bold text-orange-600">영수증</h3>
+                        <button onclick="document.getElementById('receipt-modal').remove()" class="text-gray-500 hover:text-black text-xl">&times;</button>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">매장명</span>
+                            <span class="font-bold">${res.storeName}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">일시</span>
+                            <span>${res.date} ${res.time}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">인원</span>
+                            <span>${res.partySize}명</span>
+                        </div>
+                        <div class="border-t pt-4 mt-4">
+                            <h4 class="font-bold mb-2">주문 내역</h4>
+                            ${res.menus && res.menus.length > 0 ? res.menus.map(m => `<div class="flex justify-between text-sm"><span class="text-gray-600">${m.name} x ${m.quantity}</span><span>${(m.price * m.quantity).toLocaleString()}원</span></div>`).join('') : '<p class="text-sm text-gray-400">주문 메뉴 없음</p>'}
+                        </div>
+                        <div class="flex justify-between border-t pt-4 mt-4 font-bold text-lg">
+                            <span>총 결제금액</span>
+                            <span class="text-orange-600">${res.totalPrice.toLocaleString()}원</span>
+                        </div>
+                        <div class="mt-4 p-3 bg-gray-100 rounded text-center">
+                            <p class="font-bold ${res.paymentMethod === 'ON_SITE' ? 'text-orange-600' : 'text-blue-600'}">
+                                ${res.paymentMethod === 'ON_SITE' ? '결제 예정 (현장 결제)' : '결제 완료 (카드)'}
+                            </p>
+                            <p class="text-xs text-gray-500 mt-1">${res.paymentTime ? res.paymentTime.replace('T', ' ').substring(0, 16) : ''}</p>
+                        </div>
+                    </div>
+                    <div class="mt-6 text-center text-xs text-gray-400">
+                        본 영수증은 테스트용입니다.
+                    </div>
+                </div>
+            `;
         }
 
-        try {
-            // [백엔드 연결] /user/withdraw (POST)
-            const response = await fetch('/user/withdraw', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ password: password }) // 본문에 비밀번호 전송
-            });
-            
-            const responseText = await response.text(); // 서버 응답 텍스트
+        // --- Notification Logic ---
+        async function checkUpcomingReservations() {
+            if (!currentUser) return;
+            try {
+                const response = await fetch('/api/reservations/my');
+                if (!response.ok) return;
+                const reservations = await response.json();
 
-            if (response.ok) {
-                alert(responseText); // "회원 탈퇴 성공"
-                currentUser = null; // 로그아웃 상태로 변경
-                handleNavigate('home'); // 홈으로 이동
-            } else {
-                // "비밀번호가 일치하지 않습니다." 등 서버 오류 메시지 표시
-                msgEl.textContent = `탈퇴 실패: ${responseText}`;
-            }
-        } catch (e) {
-            console.error('Withdraw error:', e);
-            msgEl.textContent = '회원 탈퇴 중 오류가 발생했습니다.';
+                const now = new Date();
+                reservations.forEach(res => {
+                    const resTime = new Date(`${res.date}T${res.time}`);
+                    const diffMs = resTime - now;
+                    const diffMins = Math.floor(diffMs / 60000);
+
+                    // Notify if within 30 mins (0 to 30) and not notified yet
+                    if (diffMins > 0 && diffMins <= 30 && !notifiedReservations.has(res.id)) {
+                        alert(`[알림] 예약 시간이 ${diffMins}분 남았습니다!\n매장: ${res.storeName} \n시간: ${res.time}`);
+                        notifiedReservations.add(res.id);
+                    }
+                });
+            } catch (e) { console.error("Notification check failed", e); }
         }
-    }
 
-    // 초기 페이지 로드
-    render();
     </script>
-    </body>
+</body>
+
 </html>

@@ -32,7 +32,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
+            throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 
@@ -44,32 +45,36 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
 
                 .authorizeHttpRequests(authorize -> authorize
-
-                        .requestMatchers(HttpMethod.GET, "/api/reservations/times", "/api/reservations/tables").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/stores/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/reservations/times", "/api/reservations/tables")
+                        .permitAll()
+                        .requestMatchers("/api/stores", "/api/stores/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
                         .requestMatchers("/", "/baroeat_interface.html", "/api/auth/**").permitAll()
-
-                        // --- 3. OAuth2 리다이렉션 경로 허용 ---
                         .requestMatchers("/login/oauth2/code/**", "/oauth2/**").permitAll()
+                        .anyRequest().authenticated())
 
-                        .anyRequest().authenticated()
-                )
+                // 401 Handling for API
+                .exceptionHandling(e -> e
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            if (request.getRequestURI().startsWith("/api/")) {
+                                response.setStatus(401);
+                                response.setContentType("application/json;charset=UTF-8");
+                                response.getWriter().write("{\"message\":\"로그인이 필요합니다.\"}");
+                            } else {
+                                response.sendRedirect("/oauth2/authorization/kakao");
+                            }
+                        }))
 
                 .oauth2Login(oauth2 -> oauth2
-                        .loginPage("/") // (선택사항) 로그인 페이지 경로
-                        .defaultSuccessUrl("/baroeat_interface.html", true) // 로그인 성공 시 이동할 페이지
+                        .defaultSuccessUrl("/baroeat_interface.html", true)
                         .userInfoEndpoint(userInfo -> userInfo
-                                .userService(customOAuth2UserService) // 우리가 만든 Custom 서비스 연결
-                        )
-                )
+                                .userService(customOAuth2UserService)))
 
                 .logout(logout -> logout
                         .logoutUrl("/api/auth/logout")
                         .logoutSuccessHandler((request, response, authentication) -> response.setStatus(200))
                         .invalidateHttpSession(true)
-                        .deleteCookies("JSESSIONID")
-                );
+                        .deleteCookies("JSESSIONID"));
 
         return http.build();
     }

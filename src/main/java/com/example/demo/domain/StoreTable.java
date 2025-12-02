@@ -17,10 +17,17 @@ public class StoreTable {
     @Column(name = "table_id")
     private Long id;
 
+    @Column(name = "table_name")
     private String name;
+
     private String description;
+
     private int capacityMin;
     private int capacityMax;
+
+    // DB requires both 'capacity' and 'capacity_max' (mapped from capacityMax)
+    private int capacity;
+
     private int additionalPrice;
     private int totalCount;
 
