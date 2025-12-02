@@ -39,9 +39,8 @@ public class ReservationService {
     public List<AvailableTimeResponse> getAvailableTimes(LocalDate date) {
         List<AvailableTimeResponse> times = new ArrayList<>();
 
-        // 전체 테이블 수 계산
-        int totalTableCapacity = storeTableRepository.findAll().stream()
-                .mapToInt(StoreTable::getTotalCount).sum();
+        // 전체 테이블 수 계산 (각 행이 1개의 테이블이므로 count() 사용)
+        long totalTableCapacity = storeTableRepository.count();
         if (totalTableCapacity == 0) totalTableCapacity = 1;
 
         // 해당 날짜의 모든 예약
@@ -75,9 +74,13 @@ public class ReservationService {
         for (StoreTable table : matchingTables) {
             // 해당 시간대 잔여 테이블 수 계산
             int reservedCount = reservationRepository.countByReservationDateAndReservationTimeAndStoreTable_Id(date, time, table.getId());
-            int availableCount = table.getTotalCount() - reservedCount;
+            // 예약이 없으면(0이면) 사용 가능 (1), 있으면 불가능 (0)
+            int availableCount = (reservedCount == 0) ? 1 : 0;
 
-            response.add(new TableOptionResponse(table, availableCount));
+            // 예약 가능한 테이블만 리스트에 추가 (선택지 제공)
+            if (availableCount > 0) {
+                response.add(new TableOptionResponse(table, availableCount));
+            }
         }
         return response;
     }

@@ -22,7 +22,7 @@ public class StoreTable {
     private int capacityMin;
     private int capacityMax;
     private int additionalPrice;
-    private int totalCount;
+    // private int totalCount; // 제거됨
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "store_id")

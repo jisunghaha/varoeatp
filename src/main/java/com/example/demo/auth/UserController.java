@@ -16,9 +16,11 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
+    private final com.example.demo.service.ReservationService reservationService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, com.example.demo.service.ReservationService reservationService) {
         this.userService = userService;
+        this.reservationService = reservationService;
     }
 
     /**
@@ -34,7 +36,27 @@ public class UserController {
         }
         
         // HTML 파일 이름 대신 사용자 이메일(JSON)을 반환합니다.
+        // HTML 파일 이름 대신 사용자 이메일(JSON)을 반환합니다.
         return ResponseEntity.ok(Map.of("email", userEmail));
+    }
+
+    /**
+     * 👇 [추가됨] 나의 예약 내역 조회 API
+     */
+    @GetMapping("/reservations")
+    public ResponseEntity<?> getMyReservations() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+            return ResponseEntity.status(401).body("로그인이 필요합니다.");
+        }
+
+        try {
+            // 로그인된 ID로 예약 내역 조회
+            java.util.List<com.example.demo.dto.ReservationResponse> reservations = reservationService.getReservationsByUser(auth.getName());
+            return ResponseEntity.ok(reservations);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("예약 내역 조회 실패: " + e.getMessage());
+        }
     }
 
     /**

@@ -47,14 +47,17 @@ public class UserService {
 
         // 2. 사용자 이름으로 User 찾기
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다.")); //
+                .or(() -> userRepository.findByEmail(username)) // 이메일로도 찾기
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
-        // 3. 비밀번호 확인
-        if (!passwordEncoder.matches(password, user.getPassword())) {
-            throw new RuntimeException("비밀번호가 일치하지 않습니다.");
+        // 3. 비밀번호 확인 (일반 유저인 경우에만)
+        if (user.getProvider() == null || user.getProvider().isEmpty()) {
+            if (!passwordEncoder.matches(password, user.getPassword())) {
+                throw new RuntimeException("비밀번호가 일치하지 않습니다.");
+            }
         }
 
-        // 4. 비밀번호가 일치하면 사용자 삭제
+        // 4. 사용자 삭제
         userRepository.delete(user);
     }
 }

@@ -167,40 +167,43 @@ public class StoreController {
         List<StoreTable> allTables = new ArrayList<>();
 
         // 각 매장마다 테이블 3개씩 추가 (2인석, 4인석, 단체석)
+        // 각 매장마다 테이블 개별 생성
         for (Store store : allStores) {
-            // 1) 2인석
-            StoreTable t1 = new StoreTable();
-            t1.setName("연인석 (창가)");
-            t1.setDescription("뷰가 좋은 창가 2인석");
-            t1.setCapacityMin(1);
-            t1.setCapacityMax(2);
-            t1.setAdditionalPrice(0);
-            t1.setTotalCount(5);
-            t1.setStore(store); // 👈 중요: 매장 연결!
+            // 1) 2인석 5개 생성 (Table 1 ~ 5)
+            for (int i = 1; i <= 5; i++) {
+                StoreTable t = new StoreTable();
+                t.setName("2인석-" + i);
+                t.setDescription("아늑한 2인석");
+                t.setCapacityMin(1);
+                t.setCapacityMax(2);
+                t.setAdditionalPrice(0);
+                t.setStore(store);
+                allTables.add(t);
+            }
 
-            // 2) 4인석
-            StoreTable t2 = new StoreTable();
-            t2.setName("일반 4인석");
-            t2.setDescription("편안한 소파 좌석");
-            t2.setCapacityMin(2);
-            t2.setCapacityMax(4);
-            t2.setAdditionalPrice(0);
-            t2.setTotalCount(10);
-            t2.setStore(store); // 👈 중요: 매장 연결!
+            // 2) 4인석 10개 생성 (Table 6 ~ 15)
+            for (int i = 1; i <= 10; i++) {
+                StoreTable t = new StoreTable();
+                t.setName("4인석-" + i);
+                t.setDescription("편안한 4인석");
+                t.setCapacityMin(2);
+                t.setCapacityMax(4);
+                t.setAdditionalPrice(0);
+                t.setStore(store);
+                allTables.add(t);
+            }
 
-            // 3) 단체석
-            StoreTable t3 = new StoreTable();
-            t3.setName("단체 룸");
-            t3.setDescription("프라이빗한 단체 룸");
-            t3.setCapacityMin(5);
-            t3.setCapacityMax(8);
-            t3.setAdditionalPrice(5000);
-            t3.setTotalCount(2);
-            t3.setStore(store); // 👈 중요: 매장 연결!
-
-            allTables.add(t1);
-            allTables.add(t2);
-            allTables.add(t3);
+            // 3) 단체석 2개 생성 (Room 1 ~ 2)
+            for (int i = 1; i <= 2; i++) {
+                StoreTable t = new StoreTable();
+                t.setName("단체룸-" + i);
+                t.setDescription("프라이빗 룸");
+                t.setCapacityMin(5);
+                t.setCapacityMax(8);
+                t.setAdditionalPrice(5000);
+                t.setStore(store);
+                allTables.add(t);
+            }
         }
 
         storeTableRepository.saveAll(allTables);
