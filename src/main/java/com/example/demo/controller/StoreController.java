@@ -4,6 +4,8 @@ import com.example.demo.domain.Product;
 import com.example.demo.domain.Store;
 import com.example.demo.repository.ProductRepository;
 import com.example.demo.repository.StoreRepository;
+import com.example.demo.repository.StoreTableRepository;
+import com.example.demo.domain.StoreTable;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +26,9 @@ public class StoreController {
 
     @Autowired
     private ProductRepository productRepository;
+
+    @Autowired
+    private StoreTableRepository storeTableRepository;
 
     @PostConstruct // 서버 시작 시 1회 자동 실행
     public void initTestStores() {

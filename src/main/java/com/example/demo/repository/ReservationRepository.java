@@ -14,4 +14,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
     // 특정 날짜의 모든 예약 조회
     List<Reservation> findByReservationDate(LocalDate date);
+
+    // 사용자별 예약 내역 조회 (최신순)
+    List<Reservation> findByUserOrderByIdDesc(com.example.demo.domain.User user);
 }

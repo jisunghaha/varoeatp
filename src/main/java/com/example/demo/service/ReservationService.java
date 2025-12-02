@@ -113,4 +113,13 @@ public class ReservationService {
 
         return reservationRepository.save(reservation);
     }
+
+    public List<com.example.demo.dto.ReservationResponse> getReservationsByUser(String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+        return reservationRepository.findByUserOrderByIdDesc(user).stream()
+                .map(com.example.demo.dto.ReservationResponse::new)
+                .collect(Collectors.toList());
+    }
 }
