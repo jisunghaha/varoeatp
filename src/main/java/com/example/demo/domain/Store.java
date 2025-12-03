@@ -34,18 +34,23 @@ public class Store {
     @Column(name = "is_open")
     private Boolean isOpen; // 영업 여부 (Nullable)
 
+    @Column(name = "category")
+    private String category; // 매장 카테고리 (예: 한식, 양식, 주점)
+
     // [수정] 1. 빈 생성자
     public Store() {
     }
 
-    // [수정] 2. 매장 데이터를 받기 위한 생성자 (6개 항목)
-    public Store(String storeName, String address, Double lat, Double lng, String phoneNumber, Boolean isOpen) {
+    // [수정] 2. 매장 데이터를 받기 위한 생성자 (7개 항목)
+    public Store(String storeName, String address, Double lat, Double lng, String phoneNumber, Boolean isOpen,
+            String category) {
         this.storeName = storeName;
         this.address = address;
         this.lat = lat;
         this.lng = lng;
         this.phoneNumber = phoneNumber;
         this.isOpen = isOpen;
+        this.category = category;
     }
 
     // --- Getter (데이터를 읽는 '입구') ---
@@ -70,13 +75,17 @@ public class Store {
         return id;
     }
 
-    // 👇 [추가] 2개 Getter 추가
+    // 👇 [추가] 3개 Getter 추가
     public String getPhoneNumber() {
         return phoneNumber;
     }
 
     public Boolean getIsOpen() {
         return isOpen;
+    }
+
+    public String getCategory() {
+        return category;
     }
 
 }

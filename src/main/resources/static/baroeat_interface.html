@@ -45,7 +45,21 @@
         <!-- Sidebar (Store List) -->
         <aside id="sidebar" class="w-1/3 bg-white border-r overflow-y-auto hidden md:block z-10">
             <div class="p-4 border-b">
-                <h2 class="text-xl font-bold">내 주변 맛집</h2>
+                <h2 class="text-xl font-bold mb-2">내 주변 맛집</h2>
+                <div class="flex space-x-2 overflow-x-auto scrollbar-hide">
+                    <button onclick="filterStores('all')"
+                        class="px-3 py-1 bg-orange-500 text-white rounded-full text-sm whitespace-nowrap store-filter-btn"
+                        data-cat="all">전체</button>
+                    <button onclick="filterStores('한식')"
+                        class="px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm whitespace-nowrap store-filter-btn hover:bg-gray-300"
+                        data-cat="한식">한식</button>
+                    <button onclick="filterStores('양식')"
+                        class="px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm whitespace-nowrap store-filter-btn hover:bg-gray-300"
+                        data-cat="양식">양식</button>
+                    <button onclick="filterStores('주점')"
+                        class="px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm whitespace-nowrap store-filter-btn hover:bg-gray-300"
+                        data-cat="주점">주점</button>
+                </div>
             </div>
             <div id="store-list-sidebar">
                 <div class="p-4 text-center text-gray-500">매장을 불러오는 중...</div>
@@ -66,12 +80,18 @@
     <script>
         // --- State Management ---
         let currentView = 'home';
-        let currentUser = null;
+        let currentUser = null; // Display name (Nickname or Email)
+        let currentUserEmail = null; // Actual Email
         let currentStoreId = null;
         let selectedMenus = {};
         let menuData = [];
         let currentTablePrice = 0;
+
         let notifiedReservations = new Set(); // To prevent duplicate alerts
+        let currentCategory = 'all'; // Track current menu category
+        let currentStoreCategory = 'all'; // Track current store category
+        let favoriteStoreIds = new Set(); // Track favorite stores
+        let allStores = []; // Cache all stores
         const apiUrl = '/api/auth';
 
         // PortOne Init
@@ -100,25 +120,33 @@
         }
 
         // --- Render Function ---
-        function render() {
-            const viewContainer = document.getElementById('view-container');
-            const sidebar = document.getElementById('sidebar');
-            const map = document.getElementById('map');
+        function updateHeader() {
             const authButtons = document.getElementById('auth-buttons');
+            let navLinks = `
+                <button onclick="handleNavigate('home')" class="text-gray-600 hover:text-orange-600 mr-4 font-bold">홈</button>
+                <button onclick="handleNavigate('community')" class="text-gray-600 hover:text-orange-600 mr-4 font-bold">커뮤니티</button>
+            `;
 
-            // Auth Buttons
             if (currentUser) {
-                authButtons.innerHTML = `
+                authButtons.innerHTML = navLinks + `
                     <span class="mr-4 text-gray-700">안녕하세요, ${currentUser}님</span>
                     <button onclick="handleNavigate('mypage')" class="text-gray-600 hover:text-orange-600 mr-4">마이페이지</button>
                     <button onclick="handleLogout()" class="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300">로그아웃</button>
                 `;
             } else {
-                authButtons.innerHTML = `
+                authButtons.innerHTML = navLinks + `
                     <button onclick="handleNavigate('login')" class="text-gray-600 hover:text-orange-600 mr-4">로그인</button>
                     <button onclick="handleNavigate('signup')" class="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600">회원가입</button>
                 `;
             }
+        }
+
+        function render() {
+            const viewContainer = document.getElementById('view-container');
+            const sidebar = document.getElementById('sidebar');
+            const map = document.getElementById('map');
+
+            updateHeader();
 
             // View Routing
             if (currentView === 'home') {
@@ -126,7 +154,47 @@
                 sidebar.classList.remove('hidden');
                 map.classList.remove('hidden');
                 loadStoresAndMap();
+            } else if (currentView === 'community') {
+                viewContainer.classList.remove('hidden');
+                viewContainer.innerHTML = `
+                    <div class="max-w-4xl mx-auto p-4">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-3xl font-bold">커뮤니티</h2>
+                            <button onclick="openWriteReviewModal()" class="bg-orange-500 text-white px-4 py-2 rounded font-bold hover:bg-orange-600">글쓰기</button>
+                        </div>
+                        <div id="review-list" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <p class="text-gray-500">리뷰를 불러오는 중...</p>
+                        </div>
+                    
+                    <!-- Write Review Modal -->
+                    <div id="write-review-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+                        <div class="bg-white p-6 rounded-lg w-full max-w-lg">
+                            <h3 class="text-xl font-bold mb-4">리뷰 작성</h3>
+                            <div class="mb-4">
+                                <label class="block font-bold mb-2">매장 선택 (선택사항)</label>
+                                <select id="review-store-select" class="w-full p-2 border rounded">
+                                    <option value="">매장 선택 안함</option>
+                                    <!-- Stores will be loaded here -->
+                                </select>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block font-bold mb-2">내용</label>
+                                <textarea id="review-content" class="w-full p-2 border rounded h-32" placeholder="리뷰 내용을 입력하세요"></textarea>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block font-bold mb-2">사진 첨부</label>
+                                <input type="file" id="review-image" accept="image/*" class="w-full p-2 border rounded">
+                            </div>
+                            <div class="flex justify-end space-x-2">
+                                <button onclick="closeWriteReviewModal()" class="px-4 py-2 bg-gray-200 rounded">취소</button>
+                                <button onclick="submitReview()" class="px-4 py-2 bg-orange-500 text-white rounded font-bold">등록</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                loadCommunity();
             } else if (currentView === 'login') {
+                // ... (login view content)
                 viewContainer.classList.remove('hidden');
                 viewContainer.innerHTML = `
                     <div class="flex flex-col items-center justify-center h-full p-4">
@@ -142,6 +210,7 @@
                     </div>
                 `;
             } else if (currentView === 'signup') {
+                // ... (signup view content)
                 viewContainer.classList.remove('hidden');
                 viewContainer.innerHTML = `
                     <div class="flex flex-col items-center justify-center h-full p-4">
@@ -158,6 +227,7 @@
                     </div>
                 `;
             } else if (currentView === 'mypage') {
+                // ... (mypage content)
                 viewContainer.classList.remove('hidden');
                 viewContainer.innerHTML = `
                     <div class="max-w-2xl mx-auto p-6">
@@ -168,6 +238,15 @@
                                     <span class="font-bold text-gray-600">이메일</span>
                                     <span id="mypage-email" class="text-gray-800">로딩중...</span>
                                 </div>
+                                <div class="mb-4">
+                                    <label class="block font-bold text-gray-600 mb-2">별명</label>
+                                    <input type="text" id="mypage-nickname" class="w-full p-2 border rounded" placeholder="별명을 입력하세요">
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block font-bold text-gray-600 mb-2">선호하는 음식</label>
+                                    <input type="text" id="mypage-food" class="w-full p-2 border rounded" placeholder="예: 국밥, 찌개">
+                                </div>
+                                <button onclick="updateMyPageInfo()" class="w-full bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 font-bold">정보 수정 저장</button>
                             </div>
                         </div>
                         
@@ -183,6 +262,7 @@
                 `;
                 loadMyPageInfo();
             } else if (currentView === 'store-detail') {
+                // ... (store detail content)
                 viewContainer.classList.remove('hidden');
                 viewContainer.innerHTML = `
                     <div class="max-w-4xl mx-auto p-4">
@@ -194,6 +274,7 @@
                 `;
                 loadStoreDetail();
             } else if (currentView === 'store-menu') {
+                // ... (store menu content)
                 viewContainer.classList.remove('hidden');
                 viewContainer.innerHTML = `
                     <div class="max-w-4xl mx-auto p-4">
@@ -205,6 +286,7 @@
                 `;
                 loadStoreMenu();
             } else if (currentView === 'reservation') {
+                // ... (reservation content)
                 viewContainer.classList.remove('hidden');
                 viewContainer.innerHTML = `
                     <div class="max-w-4xl mx-auto p-4">
@@ -266,7 +348,7 @@
                                         </label>
                                         <label class="flex items-center space-x-2 cursor-pointer">
                                             <input type="radio" name="payment-method" value="CARD" class="form-radio text-orange-600">
-                                            <span>카드 결제 (테스트)</span>
+                                            <span>카드 결제</span>
                                         </label>
                                     </div>
                                 </div>
@@ -302,16 +384,111 @@
         };
 
         async function checkLoginStatus() {
+            // ... (existing checkLoginStatus)
             try {
                 const response = await fetch('/api/auth/me');
                 if (response.ok) {
-                    currentUser = await response.text();
+                    const email = await response.text();
+                    currentUserEmail = email;
+                    // Fetch full profile to get nickname
+                    try {
+                        const profileRes = await fetch('/user/mypage');
+                        if (profileRes.ok) {
+                            const profile = await profileRes.json();
+                            currentUser = profile.nickname || profile.email;
+                        } else {
+                            currentUser = email;
+                        }
+                        // Load Favorites
+                        await loadFavorites();
+                    } catch (e) {
+                        currentUser = email;
+                    }
                 } else {
                     currentUser = null;
+                    currentUserEmail = null;
+                    favoriteStoreIds.clear();
                 }
             } catch (e) {
                 currentUser = null;
+                currentUserEmail = null;
+                favoriteStoreIds.clear();
             }
+        }
+
+        async function loadFavorites() {
+            try {
+                const res = await fetch('/api/favorites');
+                if (res.ok) {
+                    const ids = await res.json();
+                    favoriteStoreIds = new Set(ids);
+                }
+            } catch (e) { console.error('Failed to load favorites', e); }
+        }
+
+        async function toggleFavorite(storeId) {
+            // ... (existing toggleFavorite)
+            console.log('toggleFavorite called for store:', storeId);
+            if (!currentUser) {
+                alert('로그인이 필요합니다.');
+                handleNavigate('login');
+                return;
+            }
+            try {
+                const res = await fetch(`/api/favorites/${storeId}`, { method: 'POST' });
+                if (res.ok) {
+                    const status = await res.text();
+                    if (status === 'added') favoriteStoreIds.add(storeId);
+                    else favoriteStoreIds.delete(storeId);
+
+                    // Update UI if on store detail page
+                    if (currentView === 'store-detail' && currentStoreId === storeId) {
+                        updateFavoriteIcon(storeId);
+                    }
+                    // Reload sidebar to reflect changes
+                    loadStoresAndMap();
+                } else {
+                    const errorText = await res.text();
+                    alert('즐겨찾기 처리 실패: ' + errorText);
+                    console.error('Favorite toggle failed:', res.status, errorText);
+                }
+            } catch (e) {
+                alert('오류 발생: ' + e.message);
+                console.error('Favorite toggle error:', e);
+            }
+        }
+
+        function updateFavoriteIcon(storeId) {
+            // ... (existing updateFavoriteIcon)
+            const icon = document.getElementById('fav-icon');
+            if (icon) {
+                if (favoriteStoreIds.has(storeId)) {
+                    icon.textContent = '★';
+                    icon.classList.add('text-yellow-400');
+                    icon.classList.remove('text-gray-300');
+                } else {
+                    icon.textContent = '☆';
+                    icon.classList.add('text-gray-300');
+                    icon.classList.remove('text-yellow-400');
+                }
+            }
+        }
+
+        function filterStores(category) {
+            currentStoreCategory = category;
+
+            // Update button styles
+            document.querySelectorAll('.store-filter-btn').forEach(btn => {
+                if (btn.dataset.cat === category) {
+                    btn.classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+                    btn.classList.add('bg-orange-500', 'text-white');
+                } else {
+                    btn.classList.add('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+                    btn.classList.remove('bg-orange-500', 'text-white');
+                }
+            });
+
+            renderStoreList(allStores);
         }
 
         async function loadStoresAndMap() {
@@ -328,37 +505,91 @@
             }
 
             try {
+                // Fetch only if not cached or force reload (simplified: always fetch for now to get latest data)
                 const response = await fetch('/api/stores');
                 if (!response.ok) throw new Error('서버에서 매장 목록을 가져오지 못했습니다.');
-                const stores = await response.json();
+                allStores = await response.json();
 
-                if (stores.length === 0) {
-                    listSidebar.innerHTML = '<p>주변에 등록된 매장이 없습니다.</p>';
-                    return;
-                }
-                listSidebar.innerHTML = '';
-                stores.forEach(store => {
-                    const lat = parseFloat(store.lat);
-                    const lng = parseFloat(store.lng);
-                    if (map && !isNaN(lat) && !isNaN(lng)) {
-                        const position = new kakao.maps.LatLng(lat, lng);
-                        const marker = new kakao.maps.Marker({ position: position, title: store.storeName });
-                        marker.setMap(map);
-                        kakao.maps.event.addListener(marker, 'click', function () { handleNavigate('store-detail', store.id); });
-                    }
-                    const storeEl = document.createElement('div');
-                    storeEl.className = 'p-4 border-b hover:bg-gray-100 cursor-pointer';
-                    storeEl.onclick = () => handleNavigate('store-detail', store.id);
-                    storeEl.innerHTML = `<h3 class="font-bold text-lg">${store.storeName}</h3><p class="text-sm text-gray-600">${store.address}</p>`;
-                    listSidebar.appendChild(storeEl);
-                });
-                if (map && stores.length > 0) {
-                    map.setCenter(new kakao.maps.LatLng(parseFloat(stores[0].lat), parseFloat(stores[0].lng)));
-                }
+                renderStoreList(allStores, map);
+
             } catch (error) {
                 console.error(error);
                 listSidebar.innerHTML = `<p class="text-red-500">Error: ${error.message}</p>`;
             }
+        }
+
+        function renderStoreList(stores, map) {
+            const listSidebar = document.getElementById('store-list-sidebar');
+
+            // Filter by category
+            let filteredStores = stores;
+            if (currentStoreCategory !== 'all') {
+                filteredStores = stores.filter(s => s.category === currentStoreCategory);
+            }
+
+            if (filteredStores.length === 0) {
+                listSidebar.innerHTML = '<p class="p-4 text-gray-500">해당 카테고리의 매장이 없습니다.</p>';
+                return;
+            }
+            listSidebar.innerHTML = '';
+
+            // Separate favorites
+            const favorites = filteredStores.filter(s => favoriteStoreIds.has(s.id));
+            const others = filteredStores.filter(s => !favoriteStoreIds.has(s.id));
+
+            if (favorites.length > 0) {
+                const favHeader = document.createElement('div');
+                favHeader.className = 'p-2 bg-yellow-50 font-bold text-yellow-600 border-b';
+                favHeader.textContent = '★ 즐겨찾는 매장';
+                listSidebar.appendChild(favHeader);
+
+                favorites.forEach(store => createStoreListItem(store, listSidebar, map));
+            }
+
+            if (others.length > 0) {
+                const otherHeader = document.createElement('div');
+                otherHeader.className = 'p-2 bg-gray-50 font-bold text-gray-600 border-b';
+                otherHeader.textContent = '모든 매장';
+                listSidebar.appendChild(otherHeader);
+
+                others.forEach(store => createStoreListItem(store, listSidebar, map));
+            }
+
+            // Update Map Markers (if map exists)
+            // Note: Map markers should ideally be cleared and re-added. 
+            // For simplicity, we are re-creating the map in loadStoresAndMap, but filterStores calls renderStoreList without map.
+            // If we want to update map on filter, we need to handle map markers.
+            // Let's assume map is static for now or re-render map if needed.
+            // Actually, let's try to update map center if we have stores.
+            if (map && filteredStores.length > 0) {
+                map.setCenter(new kakao.maps.LatLng(parseFloat(filteredStores[0].lat), parseFloat(filteredStores[0].lng)));
+            }
+        }
+
+        function createStoreListItem(store, container, map) {
+            const lat = parseFloat(store.lat);
+            const lng = parseFloat(store.lng);
+            if (map && !isNaN(lat) && !isNaN(lng)) {
+                const position = new kakao.maps.LatLng(lat, lng);
+                const marker = new kakao.maps.Marker({ position: position, title: store.storeName });
+                marker.setMap(map);
+                kakao.maps.event.addListener(marker, 'click', function () { handleNavigate('store-detail', store.id); });
+            }
+            const storeEl = document.createElement('div');
+            storeEl.className = 'p-4 border-b hover:bg-gray-100 cursor-pointer flex justify-between items-center';
+            storeEl.onclick = () => handleNavigate('store-detail', store.id);
+
+            const isFav = favoriteStoreIds.has(store.id);
+            storeEl.innerHTML = `
+                <div>
+                    <h3 class="font-bold text-lg flex items-center">
+                        ${store.storeName}
+                        ${isFav ? '<span class="text-yellow-400 ml-2">★</span>' : ''}
+                    </h3>
+                    <p class="text-sm text-gray-600">${store.address}</p>
+                </div>
+            `;
+            container.appendChild(storeEl);
         }
 
         async function loadStoreDetail() {
@@ -367,8 +598,14 @@
             try {
                 const storeResponse = await fetch(`/api/stores/${currentStoreId}`);
                 const store = await storeResponse.json();
+                const isFav = favoriteStoreIds.has(store.id);
                 contentEl.innerHTML = `
-                    <h2 class="text-3xl font-bold mb-4 text-orange-600">${store.storeName}</h2>
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-3xl font-bold text-orange-600">${store.storeName}</h2>
+                        <button onclick="toggleFavorite(${store.id})" class="text-3xl focus:outline-none">
+                            <span id="fav-icon" class="${isFav ? 'text-yellow-400' : 'text-gray-300'}">${isFav ? '★' : '☆'}</span>
+                        </button>
+                    </div>
                     <p class="text-gray-600 mb-4">${store.address}</p>
                     <p class="text-gray-600 mb-6">${store.phoneNumber || '전화번호 없음'}</p>
                     <div class="flex space-x-4">
@@ -382,7 +619,7 @@
             if (!currentStoreId) return;
             const contentEl = document.getElementById('menu-category-content');
             try {
-                const response = await fetch(`/api/stores/${currentStoreId}/products`);
+                const response = await fetch(`/ api / stores / ${currentStoreId}/products`);
                 const products = await response.json();
                 contentEl.innerHTML = '<h3 class="text-2xl font-bold mb-4">메뉴</h3><div class="space-y-4">';
                 products.forEach(p => {
@@ -409,20 +646,54 @@
         }
 
         function filterMenu(category) {
+            currentCategory = category; // Update global state
             const listEl = document.getElementById('menu-list');
             listEl.innerHTML = '';
             const filtered = category === 'all' ? menuData : menuData.filter(p => (p.category || '기타') === category);
+
+            // Time Restriction Logic
+            const timeVal = document.getElementById('res-time').value;
+            let currentHour = -1;
+            if (timeVal) {
+                currentHour = parseInt(timeVal.split(':')[0]);
+            }
+
             filtered.forEach(p => {
                 const qty = selectedMenus[p.id] || 0;
                 const item = document.createElement('div');
                 item.className = 'flex justify-between items-center border-b pb-2';
-                item.innerHTML = `
-                    <div class="flex-1"><h4 class="font-bold">${p.name}</h4><p class="text-xs text-gray-500">${p.price.toLocaleString()}원</p></div>
-                    <div class="flex items-center space-x-2">
-                        <button onclick="updateMenuQty(${p.id}, -1)" class="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center font-bold">-</button>
-                        <span id="qty-${p.id}" class="w-4 text-center font-bold">${qty}</span>
-                        <button onclick="updateMenuQty(${p.id}, 1)" class="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center font-bold">+</button>
-                    </div>`;
+
+                // Check restriction: Store ID 2 (Seyeonjeong) + "토마호그" + Time not 18~20
+                let isRestricted = false;
+                if (currentStoreId == 2 && p.name.includes('토마호그')) {
+                    if (currentHour !== -1 && (currentHour < 18 || currentHour >= 20)) {
+                        isRestricted = true;
+                    }
+                }
+
+                if (isRestricted) {
+                    item.innerHTML = `
+                        <div class="flex-1 opacity-50">
+                            <h4 class="font-bold">${p.name} <span class="text-red-500 text-xs ml-2">(18~20시까지만 판매)</span></h4>
+                            <p class="text-xs text-gray-500">${p.price.toLocaleString()}원</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button disabled class="w-6 h-6 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center font-bold cursor-not-allowed">-</button>
+                            <span class="w-4 text-center font-bold text-gray-400">0</span>
+                            <button disabled class="w-6 h-6 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center font-bold cursor-not-allowed">+</button>
+                        </div>`;
+                } else {
+                    item.innerHTML = `
+                        <div class="flex-1">
+                            <h4 class="font-bold">${p.name}</h4>
+                            <p class="text-xs text-gray-500">${p.price.toLocaleString()}원</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="updateMenuQty(${p.id}, -1)" class="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center font-bold">-</button>
+                            <span id="qty-${p.id}" class="w-4 text-center font-bold">${qty}</span>
+                            <button onclick="updateMenuQty(${p.id}, 1)" class="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center font-bold">+</button>
+                        </div>`;
+                }
                 listEl.appendChild(item);
             });
         }
@@ -465,7 +736,10 @@
             const password = document.getElementById('login-password').value;
             try {
                 const response = await fetch(`${apiUrl}/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
-                if (response.ok) { currentUser = await response.text(); handleNavigate('home'); }
+                if (response.ok) {
+                    await checkLoginStatus(); // Re-fetch profile to get nickname
+                    handleNavigate('home');
+                }
                 else { document.getElementById('login-message').textContent = '로그인 실패.'; }
             } catch (e) { console.error(e); }
         }
@@ -475,21 +749,49 @@
             try { const res = await fetch(`${apiUrl}/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); if (res.ok) { alert('가입 성공'); handleNavigate('login'); } } catch (e) { }
         }
 
-        async function handleLogout() { await fetch('/api/auth/logout', { method: 'POST' }); currentUser = null; handleNavigate('home'); }
+        async function handleLogout() { await fetch('/api/auth/logout', { method: 'POST' }); currentUser = null; currentUserEmail = null; handleNavigate('home'); }
 
         async function handleWithdraw() {
             const password = document.getElementById('withdraw-password').value;
             try { const res = await fetch('/user/withdraw', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }) }); if (res.ok) { alert(await res.text()); currentUser = null; handleNavigate('home'); } else { alert('탈퇴 실패'); } } catch (e) { }
         }
 
+        async function updateMyPageInfo() {
+            const nickname = document.getElementById('mypage-nickname').value;
+            const preferredFood = document.getElementById('mypage-food').value;
+
+            try {
+                const response = await fetch('/user/profile', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nickname, preferredFood })
+                });
+
+                if (response.ok) {
+                    alert('정보가 수정되었습니다.');
+                    loadMyPageInfo(); // Reload to update state
+                } else {
+                    alert('수정 실패: ' + await response.text());
+                }
+            } catch (e) {
+                alert('오류 발생: ' + e.message);
+            }
+        }
+
         async function loadMyPageInfo() {
             const emailEl = document.getElementById('mypage-email');
+            const nicknameEl = document.getElementById('mypage-nickname');
+            const foodEl = document.getElementById('mypage-food');
             try {
                 const response = await fetch('/user/mypage');
                 if (response.ok) {
                     const data = await response.json();
-                    currentUser = data.email;
+                    currentUserEmail = data.email;
+                    currentUser = data.nickname || data.email; // Update global state
                     emailEl.textContent = data.email;
+                    nicknameEl.value = data.nickname || '';
+                    foodEl.value = data.preferredFood || '';
+                    updateHeader(); // Re-render header if nickname changed
                 }
             } catch (e) { }
 
@@ -644,6 +946,8 @@
                 tables.forEach(t => {
                     listEl.innerHTML += `<div class="p-3 border rounded hover:bg-orange-50 cursor-pointer flex justify-between items-center"><div><span class="font-bold">${t.name}</span> <span class="text-sm">(${t.capacity})</span></div><button onclick="selectTable(this.closest('div'), ${t.id}, ${t.price})" class="bg-orange-500 text-white text-xs px-3 py-1 rounded">선택</button></div>`;
                 });
+                // Refresh menu to apply time restrictions
+                filterMenu(currentCategory);
             } catch (e) { }
         }
 
@@ -692,7 +996,7 @@
                     merchant_uid: "ORD" + new Date().getTime(),
                     name: "바로잇 예약 결제",
                     amount: totalAmount,
-                    buyer_email: currentUser,
+                    buyer_email: currentUserEmail,
                     buyer_name: currentUser,
                     buyer_tel: "010-1234-5678", // Optional
                 }, async function (rsp) {
@@ -785,7 +1089,7 @@
                         </div>
                     </div>
                     <div class="mt-6 text-center text-xs text-gray-400">
-                        본 영수증은 테스트용입니다.
+                        본 영수증은 바로잇 결제 증빙용입니다.
                     </div>
                 </div>
             `;

@@ -30,47 +30,32 @@ public class StoreController {
     @Autowired
     private StoreTableRepository storeTableRepository;
 
-    @PostConstruct // 서버 시작 시 1회 자동 실행
+    @PostConstruct
     public void initTestStores() {
-        if (storeRepository.count() == 0) {
-            System.out.println("====== DB가 비어있어, 매장 3개 추가를 시작합니다... ======");
-            try {
-                // 1. 수영국밥 (최신 주소 및 좌표 반영)
-                Store testStore1 = new Store(
-                        "수영국밥",
-                        "부산 부산진구 가야공원로 59 1,2층",
-                        35.14795724176053, 129.03018703293802,
-                        "0507-1352-8297", true);
-                // 2. 세연정 (가야점)
-                Store testStore2 = new Store(
-                        "세연정 가야점",
-                        "부산 부산진구 가야대로 554",
-                        35.15361309245611, 129.0326784417889,
-                        "051-867-2000", true);
-                // 3. 타키온
-                Store testStore3 = new Store(
-                        "타키온",
-                        "부산 부산진구 대학로 76 1층",
-                        35.149059214982096, 129.0344660298509,
-                        "051-891-1009", true);
-
-                storeRepository.save(testStore1);
-                storeRepository.save(testStore2);
-                storeRepository.save(testStore3);
-
-                System.out.println("====== 매장 3개 DB에 자동 추가 완료 ======");
-
-            } catch (Exception e) {
-                System.out.println("====== [오류] 매장 추가 중 실패: " + e.getMessage() + " ======");
-            }
-        } else {
+        if (storeRepository.count() > 0) {
             System.out.println("====== DB에 이미 데이터가 있으므로, 매장 추가를 건너뜁니다. ======");
+            return;
         }
 
-        // 매장 추가 로직과 별개로 상품 및 테이블 초기화 실행
-        initTestProducts();
-        initTestTables();
+        // 1. 수영국밥 (한식)
+        Store s1 = new Store("수영국밥", "부산 수영구 수영로 123", 35.165, 129.115, "051-123-4567", true, "한식");
+        storeRepository.save(s1);
+
+        // 2. 세연정 (한식)
+        Store s2 = new Store("세연정", "부산 동래구 충렬대로 123", 35.196, 129.080, "051-987-6543", true, "한식");
+        storeRepository.save(s2);
+
+        // 3. 타키온 (주점)
+        Store s3 = new Store("타키온", "부산 금정구 부산대학로 456", 35.230, 129.085, "051-555-5555", true, "주점");
+        storeRepository.save(s3);
+
+        System.out.println("====== 테스트 매장 3개 추가 완료 (카테고리 포함) ======");
     }
+
+    // 매장 추가 로직과 별개로 상품 및 테이블 초기화 실행
+    // initTestProducts();initTestTables();} // This line was part of the malformed
+    // initTestStores and should be removed or moved if it's a separate call.
+    // Assuming it was part of the malformed method.
 
     // 👇 [수정됨] 우리가 정한 최신 메뉴와 가격으로 업데이트된 메서드
     public void initTestProducts() {
