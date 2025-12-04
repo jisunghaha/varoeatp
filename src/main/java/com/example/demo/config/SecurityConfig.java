@@ -49,7 +49,7 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers("/api/stores", "/api/stores/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
-                        .requestMatchers("/", "/baroeat_interface.html", "/api/auth/**").permitAll()
+                        .requestMatchers("/", "/baroeat_interface.html", "/api/auth/**", "/api/chat").permitAll()
                         .requestMatchers("/login/oauth2/code/**", "/oauth2/**").permitAll()
                         .anyRequest().authenticated())
 

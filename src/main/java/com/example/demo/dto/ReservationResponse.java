@@ -21,6 +21,7 @@ public class ReservationResponse {
     private int totalPrice;
     private String paymentMethod;
     private String paymentTime;
+    private String paymentStatus;
     private java.util.List<MenuResponse> menus;
 
     public ReservationResponse(Reservation reservation) {
@@ -46,6 +47,11 @@ public class ReservationResponse {
                 .mapToInt(rm -> rm.getProduct().getPrice() * rm.getQuantity())
                 .sum();
         this.totalPrice = tablePrice + menuPrice;
+        this.paymentMethod = reservation.getPaymentMethod();
+        this.paymentStatus = reservation.getPaymentStatus();
+        if (reservation.getPaymentTime() != null) {
+            this.paymentTime = reservation.getPaymentTime().toString();
+        }
     }
 
     @Getter

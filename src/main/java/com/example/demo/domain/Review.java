@@ -36,11 +36,20 @@ public class Review {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    public Review(User user, Store store, String content, String imageUrl) {
+    @Column(name = "rating")
+    private int rating;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reservation_id")
+    private Reservation reservation;
+
+    public Review(User user, Store store, String content, String imageUrl, int rating, Reservation reservation) {
         this.user = user;
         this.store = store;
         this.content = content;
         this.imageUrl = imageUrl;
+        this.rating = rating;
+        this.reservation = reservation;
         this.createdAt = LocalDateTime.now();
     }
 }

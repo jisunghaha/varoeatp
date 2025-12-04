@@ -32,124 +32,142 @@ public class StoreController {
 
     @PostConstruct
     public void initTestStores() {
-        if (storeRepository.count() > 0) {
-            System.out.println("====== DB에 이미 데이터가 있으므로, 매장 추가를 건너뜁니다. ======");
-            return;
+        System.out.println("====== [1/3] StoreController 초기화 시작 ======");
+
+        // 1. 매장 카테고리 데이터 보정 (NULL -> 실데이터)
+        List<Store> allStores = storeRepository.findAll();
+        for (Store store : allStores) {
+            if (store.getCategory() == null || store.getCategory().isEmpty()) {
+                String name = store.getStoreName();
+                if (name.contains("수영국밥") || name.contains("세연정")) {
+                    store.setCategory("한식");
+                } else if (name.contains("타키온")) {
+                    store.setCategory("주점");
+                } else {
+                    store.setCategory("기타");
+                }
+                storeRepository.save(store);
+                System.out.println("====== [Update] 매장 '" + name + "' 카테고리 업데이트: " + store.getCategory());
+            }
         }
 
-        // 1. 수영국밥 (한식)
-        Store s1 = new Store("수영국밥", "부산 수영구 수영로 123", 35.165, 129.115, "051-123-4567", true, "한식");
-        storeRepository.save(s1);
-
-        // 2. 세연정 (한식)
-        Store s2 = new Store("세연정", "부산 동래구 충렬대로 123", 35.196, 129.080, "051-987-6543", true, "한식");
-        storeRepository.save(s2);
-
-        // 3. 타키온 (주점)
-        Store s3 = new Store("타키온", "부산 금정구 부산대학로 456", 35.230, 129.085, "051-555-5555", true, "주점");
-        storeRepository.save(s3);
-
-        System.out.println("====== 테스트 매장 3개 추가 완료 (카테고리 포함) ======");
+        // 테이블 변경으로 인해 메뉴와 테이블 데이터가 없을 수 있으므로 초기화 로직을 실행합니다.
+        try {
+            initTestProducts();
+            initTestTables();
+        } catch (Exception e) {
+            System.err.println("====== [ERROR] 초기화 중 오류 발생: " + e.getMessage());
+            e.printStackTrace();
+        }
+        System.out.println("====== [3/3] StoreController 초기화 완료 ======");
     }
-
-    // 매장 추가 로직과 별개로 상품 및 테이블 초기화 실행
-    // initTestProducts();initTestTables();} // This line was part of the malformed
-    // initTestStores and should be removed or moved if it's a separate call.
-    // Assuming it was part of the malformed method.
 
     // 👇 [수정됨] 우리가 정한 최신 메뉴와 가격으로 업데이트된 메서드
     public void initTestProducts() {
+        System.out.println("====== [2/3-A] 상품 데이터 초기화 확인 중... ======");
         if (productRepository.count() > 0) {
-            System.out.println("====== [경고] 상품 데이터가 이미 존재하여 초기화를 건너뜁니다. ======");
+            System.out.println("====== [Skip] 상품 데이터가 이미 존재하여 초기화를 건너뜁니다. ======");
             return;
         }
 
-        // 매장이 없으면 상품 추가 불가
-        if (storeRepository.count() == 0)
+        List<Store> allStores = storeRepository.findAll();
+        if (allStores.isEmpty()) {
+            System.out.println("====== [Skip] 매장 정보가 하나도 없어 상품을 추가할 수 없습니다. ======");
             return;
+        }
 
-        Long storeId1 = 1L; // 수영국밥
-        Long storeId2 = 2L; // 세연정
-        Long storeId3 = 3L; // 타키온
+        // DB에 있는 매장 ID를 가져와서 사용 (하드코딩 제거)
+        Long storeId1 = allStores.size() > 0 ? allStores.get(0).getId() : null;
+        Long storeId2 = allStores.size() > 1 ? allStores.get(1).getId() : null;
+        Long storeId3 = allStores.size() > 2 ? allStores.get(2).getId() : null;
 
         List<Product> products = new ArrayList<>();
 
         // ==========================================
-        // 1. 수영국밥 메뉴 (Store ID: 1)
+        // 1. 첫 번째 매장 (예: 수영국밥)
         // ==========================================
+        if (storeId1 != null) {
+            System.out.println("====== 매장 ID " + storeId1 + "에 상품 추가 중... ======");
+            // [국밥]
+            products.add(new Product("돼지 국밥", 11000, "진한 사골 육수의 깊은 맛", storeId1, "국밥", "pork_soup.jpg"));
+            products.add(new Product("순대 국밥", 11000, "통통한 전통 순대가 가득", storeId1, "국밥", "sundae_soup.jpg"));
+            products.add(new Product("내장 국밥", 11000, "쫄깃하고 고소한 내장", storeId1, "국밥", "offal_soup.jpg"));
+            products.add(new Product("섞어 국밥", 11000, "고기, 순대, 내장을 한 번에", storeId1, "국밥", "mix_soup.jpg"));
 
-        // [국밥]
-        products.add(new Product("돼지 국밥", 11000, "진한 사골 육수의 깊은 맛", storeId1, "국밥", "pork_soup.jpg"));
-        products.add(new Product("순대 국밥", 11000, "통통한 전통 순대가 가득", storeId1, "국밥", "sundae_soup.jpg"));
-        products.add(new Product("내장 국밥", 11000, "쫄깃하고 고소한 내장", storeId1, "국밥", "offal_soup.jpg"));
-        products.add(new Product("섞어 국밥", 11000, "고기, 순대, 내장을 한 번에", storeId1, "국밥", "mix_soup.jpg"));
+            // [사이드 메뉴]
+            products.add(new Product("맛보기 수육", 13000, "야들야들 부드러운 수육 한 접시", storeId1, "사이드 메뉴", "suyuk.jpg"));
+            products.add(new Product("맛보기 순대", 13000, "속이 꽉 찬 맛보기 순대", storeId1, "사이드 메뉴", "sundae_plate.jpg"));
+            products.add(new Product("보쌈 김치", 3000, "매콤달콤 아삭한 김치 추가", storeId1, "사이드 메뉴", "kimchi.jpg"));
 
-        // [사이드 메뉴]
-        products.add(new Product("맛보기 수육", 13000, "야들야들 부드러운 수육 한 접시", storeId1, "사이드 메뉴", "suyuk.jpg"));
-        products.add(new Product("맛보기 순대", 13000, "속이 꽉 찬 맛보기 순대", storeId1, "사이드 메뉴", "sundae_plate.jpg"));
-        products.add(new Product("보쌈 김치", 3000, "매콤달콤 아삭한 김치 추가", storeId1, "사이드 메뉴", "kimchi.jpg"));
-
-        // [음료]
-        products.add(new Product("식혜", 2500, "살얼음 동동 수제 식혜", storeId1, "음료", "sikhye.jpg"));
-        products.add(new Product("코카콜라", 2000, "톡 쏘는 시원함", storeId1, "음료", "coke.jpg"));
-        products.add(new Product("사이다", 2000, "청량한 사이다", storeId1, "음료", "cider.jpg"));
-        products.add(new Product("맥주", 4000, "카스/테라 병맥주", storeId1, "음료", "beer.jpg"));
-        products.add(new Product("소주", 4000, "대선/진로/참이슬", storeId1, "음료", "soju.jpg"));
-
-        // ==========================================
-        // 2. 세연정 메뉴 (Store ID: 2)
-        // ==========================================
-
-        // [대표메뉴]
-        products.add(new Product("토마호그세트", 142000, "압도적인 비주얼과 맛의 프리미엄 스테이크", storeId2, "대표메뉴", "tomahawk.jpg"));
-        products.add(new Product("화로 소불고기", 22000, "화로 향이 가득한 부드러운 소불고기", storeId2, "대표메뉴", "bulgogi.jpg"));
-        products.add(new Product("특갈비살 소금구이", 35000, "고소한 육즙이 터지는 특갈비살", storeId2, "대표메뉴", "special_ribs.jpg"));
-        products.add(new Product("양념갈비3대", 35000, "특제 양념으로 숙성시킨 갈비", storeId2, "대표메뉴", "seasoned_ribs.jpg"));
-        products.add(new Product("주물럭", 25000, "입맛을 돋우는 매콤달콤 주물럭", storeId2, "대표메뉴", "jumulleok.jpg"));
-
-        // [음료]
-        products.add(new Product("콜라", 2000, "톡 쏘는 시원함", storeId2, "음료", "coke.jpg"));
-        products.add(new Product("제로 콜라", 2000, "칼로리 걱정 없는 제로 콜라", storeId2, "음료", "zero_coke.jpg"));
-        products.add(new Product("사이다", 2000, "청량한 사이다", storeId2, "음료", "cider.jpg"));
-        products.add(new Product("제로 사이다", 2000, "깔끔한 제로 사이다", storeId2, "음료", "zero_cider.jpg"));
+            // [음료]
+            products.add(new Product("식혜", 2500, "살얼음 동동 수제 식혜", storeId1, "음료", "sikhye.jpg"));
+            products.add(new Product("코카콜라", 2000, "톡 쏘는 시원함", storeId1, "음료", "coke.jpg"));
+            products.add(new Product("사이다", 2000, "청량한 사이다", storeId1, "음료", "cider.jpg"));
+            products.add(new Product("맥주", 4000, "카스/테라 병맥주", storeId1, "음료", "beer.jpg"));
+            products.add(new Product("소주", 4000, "대선/진로/참이슬", storeId1, "음료", "soju.jpg"));
+        }
 
         // ==========================================
-        // 3. 타키온 메뉴 (Store ID: 3)
+        // 2. 두 번째 매장 (예: 세연정)
         // ==========================================
+        if (storeId2 != null) {
+            System.out.println("====== 매장 ID " + storeId2 + "에 상품 추가 중... ======");
+            // [대표메뉴]
+            products.add(new Product("토마호그세트", 142000, "압도적인 비주얼과 맛의 프리미엄 스테이크", storeId2, "대표메뉴", "tomahawk.jpg"));
+            products.add(new Product("화로 소불고기", 22000, "화로 향이 가득한 부드러운 소불고기", storeId2, "대표메뉴", "bulgogi.jpg"));
+            products.add(new Product("특갈비살 소금구이", 35000, "고소한 육즙이 터지는 특갈비살", storeId2, "대표메뉴", "special_ribs.jpg"));
+            products.add(new Product("양념갈비3대", 35000, "특제 양념으로 숙성시킨 갈비", storeId2, "대표메뉴", "seasoned_ribs.jpg"));
+            products.add(new Product("주물럭", 25000, "입맛을 돋우는 매콤달콤 주물럭", storeId2, "대표메뉴", "jumulleok.jpg"));
 
-        // [대표메뉴]
-        products.add(
-                new Product("닭갈비철판볶음밥 + 계란탕미니", 9900, "든든한 볶음밥과 따뜻한 계란탕 세트", storeId3, "대표메뉴", "dakgalbi_rice.jpg"));
-        products.add(new Product("매콤 오돌 무뼈 닭발", 13900, "오독오독 식감이 살아있는 매운 안주", storeId3, "대표메뉴", "chicken_feet.jpg"));
-        products.add(new Product("골뱅이소면", 13900, "새콤달콤한 골뱅이 무침과 쫄깃한 소면", storeId3, "대표메뉴", "whelk_noodle.jpg"));
+            // [음료]
+            products.add(new Product("콜라", 2000, "톡 쏘는 시원함", storeId2, "음료", "coke.jpg"));
+            products.add(new Product("제로 콜라", 2000, "칼로리 걱정 없는 제로 콜라", storeId2, "음료", "zero_coke.jpg"));
+            products.add(new Product("사이다", 2000, "청량한 사이다", storeId2, "음료", "cider.jpg"));
+            products.add(new Product("제로 사이다", 2000, "깔끔한 제로 사이다", storeId2, "음료", "zero_cider.jpg"));
+        }
 
-        // [국물요리]
-        products.add(new Product("계란탕", 9900, "부드럽고 따뜻한 국물", storeId3, "국물요리", "egg_soup.jpg"));
-        products.add(new Product("돼지김치찌개", 11900, "돼지고기가 듬뿍 들어간 얼큰한 찌개", storeId3, "국물요리", "kimchi_stew.jpg"));
-        products.add(new Product("오뎅탕", 10900, "시원한 국물의 부산 오뎅탕", storeId3, "국물요리", "odeng_soup.jpg"));
+        // ==========================================
+        // 3. 세 번째 매장 (예: 타키온)
+        // ==========================================
+        if (storeId3 != null) {
+            System.out.println("====== 매장 ID " + storeId3 + "에 상품 추가 중... ======");
+            // [대표메뉴]
+            products.add(
+                    new Product("닭갈비철판볶음밥 + 계란탕미니", 9900, "든든한 볶음밥과 따뜻한 계란탕 세트", storeId3, "대표메뉴",
+                            "dakgalbi_rice.jpg"));
+            products.add(
+                    new Product("매콤 오돌 무뼈 닭발", 13900, "오독오독 식감이 살아있는 매운 안주", storeId3, "대표메뉴", "chicken_feet.jpg"));
+            products.add(new Product("골뱅이소면", 13900, "새콤달콤한 골뱅이 무침과 쫄깃한 소면", storeId3, "대표메뉴", "whelk_noodle.jpg"));
 
-        // [주류]
-        products.add(new Product("소주", 4000, "참이슬/진로/대선", storeId3, "주류", "soju.jpg"));
-        products.add(new Product("맥주", 4000, "카스/테라 병맥주", storeId3, "주류", "beer.jpg"));
+            // [국물요리]
+            products.add(new Product("계란탕", 9900, "부드럽고 따뜻한 국물", storeId3, "국물요리", "egg_soup.jpg"));
+            products.add(new Product("돼지김치찌개", 11900, "돼지고기가 듬뿍 들어간 얼큰한 찌개", storeId3, "국물요리", "kimchi_stew.jpg"));
+            products.add(new Product("오뎅탕", 10900, "시원한 국물의 부산 오뎅탕", storeId3, "국물요리", "odeng_soup.jpg"));
+
+            // [주류]
+            products.add(new Product("소주", 4000, "참이슬/진로/대선", storeId3, "주류", "soju.jpg"));
+            products.add(new Product("맥주", 4000, "카스/테라 병맥주", storeId3, "주류", "beer.jpg"));
+        }
 
         productRepository.saveAll(products);
         System.out.println("====== 상품 " + products.size() + "개 DB 저장 완료 ======");
     }
 
-    // 3. 테이블(좌석) 초기화 [수정됨]
+    // 3. 테이블(좌석) 초기화
     public void initTestTables() {
+        System.out.println("====== [2/3-B] 테이블 데이터 초기화 확인 중... ======");
         if (storeTableRepository.count() > 0) {
             System.out.println("====== [Skip] 테이블 데이터가 이미 존재합니다. ======");
             return;
         }
-        // 매장 정보가 없으면 테이블을 연결할 수 없으므로 종료
-        if (storeRepository.count() == 0)
+
+        List<Store> allStores = storeRepository.findAll();
+        if (allStores.isEmpty()) {
+            System.out.println("====== [Skip] 매장 정보가 없어 테이블을 추가할 수 없습니다. ======");
             return;
+        }
 
         System.out.println("====== 테이블 데이터 초기화 시작... ======");
-
-        // 모든 매장을 가져옵니다. (테이블을 모든 매장에 똑같이 넣어주기 위함)
-        List<Store> allStores = storeRepository.findAll();
         List<StoreTable> allTables = new ArrayList<>();
 
         // 각 매장마다 테이블 4개씩 추가 (1인석, 2인석, 4인석, 단체석)
@@ -219,6 +237,8 @@ public class StoreController {
     // 매장 1개 상세 조회
     @GetMapping("/{id}")
     public ResponseEntity<Store> getStoreById(@PathVariable Long id) {
+        if (id == null)
+            return ResponseEntity.badRequest().build();
         Store store = storeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("ID " + id + "에 해당하는 매장을 찾을 수 없습니다."));
         return ResponseEntity.ok(store);
@@ -237,6 +257,8 @@ public class StoreController {
     // 상품 상세 조회 API
     @GetMapping("/products/{productId}")
     public ResponseEntity<Product> getProductDetail(@PathVariable Long productId) {
+        if (productId == null)
+            return ResponseEntity.badRequest().build();
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("ID " + productId + "에 해당하는 상품을 찾을 수 없습니다."));
         return ResponseEntity.ok(product);

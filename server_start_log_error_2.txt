@@ -1,0 +1,120 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------------< com.example:baroeatp >------------------------
+[INFO] Building baroeatp 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:3.2.5:run (default-cli) > test-compile @ baroeatp >>>
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ baroeatp ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 2 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ baroeatp ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ baroeatp ---
+[INFO] Not copying test resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ baroeatp ---
+[INFO] Not compiling test sources
+[INFO] 
+[INFO] <<< spring-boot:3.2.5:run (default-cli) < test-compile @ baroeatp <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:3.2.5:run (default-cli) @ baroeatp ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.5)
+
+2025-12-03T19:49:28.958+09:00  INFO 32620 --- [baroeatp] [           main] com.example.demo.BaroeatpApplication     : Starting BaroeatpApplication using Java 17.0.12 with PID 32620 (C:\Users\tlsgp\Documents\GitHub\varoeatp-1\target\classes started by tlsgp in C:\Users\tlsgp\Documents\GitHub\varoeatp-1)
+2025-12-03T19:49:28.960+09:00  INFO 32620 --- [baroeatp] [           main] com.example.demo.BaroeatpApplication     : No active profile set, falling back to 1 default profile: "default"
+2025-12-03T19:49:29.356+09:00  INFO 32620 --- [baroeatp] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-12-03T19:49:29.398+09:00  INFO 32620 --- [baroeatp] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 38 ms. Found 7 JPA repository interfaces.
+2025-12-03T19:49:29.732+09:00  INFO 32620 --- [baroeatp] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2025-12-03T19:49:29.740+09:00  INFO 32620 --- [baroeatp] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2025-12-03T19:49:29.741+09:00  INFO 32620 --- [baroeatp] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.20]
+2025-12-03T19:49:29.782+09:00  INFO 32620 --- [baroeatp] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2025-12-03T19:49:29.782+09:00  INFO 32620 --- [baroeatp] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 794 ms
+2025-12-03T19:49:29.875+09:00  INFO 32620 --- [baroeatp] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-12-03T19:49:29.913+09:00  INFO 32620 --- [baroeatp] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.4.4.Final
+2025-12-03T19:49:29.935+09:00  INFO 32620 --- [baroeatp] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2025-12-03T19:49:30.082+09:00  INFO 32620 --- [baroeatp] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-12-03T19:49:30.099+09:00  INFO 32620 --- [baroeatp] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2025-12-03T19:49:30.285+09:00  INFO 32620 --- [baroeatp] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@5458c71e
+2025-12-03T19:49:30.286+09:00  INFO 32620 --- [baroeatp] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2025-12-03T19:49:30.342+09:00  WARN 32620 --- [baroeatp] [           main] org.hibernate.orm.deprecation            : HHH90000025: MySQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2025-12-03T19:49:30.944+09:00  INFO 32620 --- [baroeatp] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-12-03T19:49:31.612+09:00  INFO 32620 --- [baroeatp] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-12-03T19:49:31.877+09:00  INFO 32620 --- [baroeatp] [           main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+====== [1/3] StoreController 초기화 시작 ======
+Hibernate: 
+    select
+        s1_0.id,
+        s1_0.address,
+        s1_0.category,
+        s1_0.is_open,
+        s1_0.lat,
+        s1_0.lng,
+        s1_0.phone_number,
+        s1_0.store_name 
+    from
+        baro_store s1_0
+====== [2/3-A] 상품 데이터 초기화 확인 중... ======
+Hibernate: 
+    select
+        count(*) 
+    from
+        baro_products p1_0
+====== [Skip] 상품 데이터가 이미 존재하여 초기화를 건너뜁니다. ======
+====== [2/3-B] 테이블 데이터 초기화 확인 중... ======
+Hibernate: 
+    select
+        count(*) 
+    from
+        baro_store_tables st1_0
+====== [Skip] 테이블 데이터가 이미 존재합니다. ======
+====== [3/3] StoreController 초기화 완료 ======
+2025-12-03T19:49:32.670+09:00  WARN 32620 --- [baroeatp] [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2025-12-03T19:49:32.832+09:00  INFO 32620 --- [baroeatp] [           main] o.s.s.web.DefaultSecurityFilterChain     : Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@7222e168, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@230383a7, org.springframework.security.web.context.SecurityContextHolderFilter@2e856aa4, org.springframework.security.web.header.HeaderWriterFilter@708f4d81, org.springframework.web.filter.CorsFilter@6222a343, org.springframework.security.web.authentication.logout.LogoutFilter@6a4ba6f4, org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter@45c8db36, org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter@50d02417, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@1b204439, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@434c179e, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@228c854f, org.springframework.security.web.session.SessionManagementFilter@30b35687, org.springframework.security.web.access.ExceptionTranslationFilter@19c145d2, org.springframework.security.web.access.intercept.AuthorizationFilter@1c619a77]
+2025-12-03T19:49:32.947+09:00  WARN 32620 --- [baroeatp] [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.context.ApplicationContextException: Failed to start bean 'webServerStartStop'
+2025-12-03T19:49:32.949+09:00  INFO 32620 --- [baroeatp] [           main] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-12-03T19:49:32.949+09:00  INFO 32620 --- [baroeatp] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2025-12-03T19:49:32.953+09:00  INFO 32620 --- [baroeatp] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2025-12-03T19:49:32.961+09:00  INFO 32620 --- [baroeatp] [           main] .s.b.a.l.ConditionEvaluationReportLogger : 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2025-12-03T19:49:32.971+09:00 ERROR 32620 --- [baroeatp] [           main] o.s.b.d.LoggingFailureAnalysisReporter   : 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Web server failed to start. Port 8080 was already in use.
+
+Action:
+
+Identify and stop the process that's listening on port 8080 or configure this application to listen on another port.
+
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  5.581 s
+[INFO] Finished at: 2025-12-03T19:49:33+09:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.springframework.boot:spring-boot-maven-plugin:3.2.5:run (default-cli) on project baroeatp: Process terminated with exit code: 1 -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException

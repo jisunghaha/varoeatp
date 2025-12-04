@@ -6,8 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>바로잇 (BaroEat)</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script type="text/javascript"
-        src="//dapi.kakao.com/v2/maps/sdk.js?appkey=193769daf0c31ee061eba59ad214d977&libraries=services"></script>
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=YOUR_APP_KEY"></script>
     <script src="https://cdn.iamport.kr/v1/iamport.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
@@ -177,17 +176,6 @@
                                     <option value="">매장 선택 안함</option>
                                     <!-- Stores will be loaded here -->
                                 </select>
-                            </div>
-                            <div class="mb-4">
-                                <label class="block font-bold mb-2">별점</label>
-                                <div class="flex space-x-2 text-2xl cursor-pointer" id="star-rating">
-                                    <span onclick="setRating(1)">☆</span>
-                                    <span onclick="setRating(2)">☆</span>
-                                    <span onclick="setRating(3)">☆</span>
-                                    <span onclick="setRating(4)">☆</span>
-                                    <span onclick="setRating(5)">☆</span>
-                                </div>
-                                <input type="hidden" id="review-rating" value="5">
                             </div>
                             <div class="mb-4">
                                 <label class="block font-bold mb-2">내용</label>
@@ -758,7 +746,7 @@
 
         async function handleBackendSignup() {
             const data = { username: document.getElementById('signup-user-name').value, email: document.getElementById('signup-email').value, phoneNumber: document.getElementById('signup-phone-number').value, password: document.getElementById('signup-password').value, nickname: document.getElementById('signup-user-name').value };
-            try { const res = await fetch(`${apiUrl}/signup`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); if (res.ok) { alert('가입 성공'); handleNavigate('login'); } } catch (e) { }
+            try { const res = await fetch(`${apiUrl}/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); if (res.ok) { alert('가입 성공'); handleNavigate('login'); } } catch (e) { }
         }
 
         async function handleLogout() { await fetch('/api/auth/logout', { method: 'POST' }); currentUser = null; currentUserEmail = null; handleNavigate('home'); }
@@ -1130,177 +1118,6 @@
             } catch (e) { console.error("Notification check failed", e); }
         }
 
-        // --- Review Logic (Appended) ---
-        async function openWriteReviewModal() {
-            document.getElementById('write-review-modal').classList.remove('hidden');
-            setRating(5); // Reset to 5 stars
-            // Load stores for select
-            const select = document.getElementById('review-store-select');
-            if (select.children.length <= 1) { // Only load if not loaded
-                try {
-                    const res = await fetch('/api/stores');
-                    const stores = await res.json();
-                    stores.forEach(s => {
-                        const opt = document.createElement('option'); opt.value = s.id; opt.textContent = s.storeName;
-                        select.appendChild(opt);
-                    });
-                } catch (e) { }
-            }
-        }
-        function closeWriteReviewModal() { document.getElementById('write-review-modal').classList.add('hidden'); }
-
-        function setRating(r) {
-            document.getElementById('review-rating').value = r;
-            const stars = document.getElementById('star-rating').children;
-            for (let i = 0; i < 5; i++) {
-                stars[i].textContent = i < r ? '★' : '☆';
-                stars[i].className = i < r ? 'text-yellow-400 cursor-pointer' : 'text-gray-300 cursor-pointer';
-            }
-        }
-
-        async function submitReview() {
-            const content = document.getElementById('review-content').value;
-            const storeId = document.getElementById('review-store-select').value;
-            const rating = document.getElementById('review-rating').value;
-            const fileInput = document.getElementById('review-image');
-            let imageUrl = null;
-
-            if (fileInput.files.length > 0) {
-                const file = fileInput.files[0];
-                imageUrl = await new Promise(resolve => {
-                    const reader = new FileReader();
-                    reader.onload = e => resolve(e.target.result); // Base64
-                    reader.readAsDataURL(file);
-                });
-            }
-
-            const body = { content, rating: parseInt(rating), imageUrl };
-            if (storeId) body.storeId = parseInt(storeId);
-
-            try {
-                const res = await fetch('/api/reviews', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
-                });
-
-                if (res.ok) { alert('리뷰 등록 성공'); closeWriteReviewModal(); loadCommunity(); }
-                else { const txt = await res.text(); alert('실패: ' + txt); }
-            } catch (e) { alert('오류 발생'); }
-        }
-
-        async function loadCommunity() {
-            const list = document.getElementById('review-list');
-            try {
-                const res = await fetch('/api/reviews');
-                const reviews = await res.json();
-                list.innerHTML = '';
-                reviews.forEach(r => {
-                    list.innerHTML += `
-                        <div class="bg-white p-4 rounded shadow">
-                            <div class="flex justify-between mb-2">
-                                <span class="font-bold">${r.userName}</span>
-                                <span class="text-sm text-gray-500">${r.storeName}</span>
-                            </div>
-                            <div class="text-yellow-400 mb-2">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</div>
-                            ${r.imageUrl ? `<img src="${r.imageUrl}" class="w-full h-48 object-cover rounded mb-2">` : ''}
-                            <p>${r.content}</p>
-                            <p class="text-xs text-gray-400 mt-2">${r.createdAt.split('T')[0]}</p>
-                        </div>`;
-                });
-            } catch (e) { list.innerHTML = '<p>로딩 실패</p>'; }
-        }
-    </script>
-    <!-- Chatbot UI -->
-    <button id="chat-btn" onclick="toggleChat()"
-        class="fixed bottom-4 left-4 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition z-50 flex items-center justify-center w-14 h-14 text-2xl">
-        🤖
-    </button>
-
-    <div id="chat-window"
-        class="fixed bottom-20 left-4 w-80 h-96 bg-white rounded-xl shadow-2xl hidden flex flex-col z-50 border border-gray-200 font-sans">
-        <div class="bg-blue-600 text-white p-4 rounded-t-xl flex justify-between items-center shadow-sm">
-            <h3 class="font-bold flex items-center gap-2">🤖 바로잇 AI</h3>
-            <button onclick="toggleChat()" class="text-white hover:text-gray-200 text-xl font-bold">&times;</button>
-        </div>
-        <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-3 bg-gray-50 text-sm">
-            <div class="flex justify-start">
-                <div class="bg-white border text-gray-800 p-2 rounded-lg rounded-tl-none shadow-sm max-w-[80%]">
-                    안녕하세요! 무엇을 도와드릴까요?
-                </div>
-            </div>
-        </div>
-        <div class="p-3 border-t bg-white flex gap-2">
-            <input type="text" id="chat-input"
-                class="flex-1 border rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="메시지 입력..." onkeypress="handleChatKeyPress(event)">
-            <button onclick="sendChatMessage()"
-                class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition">전송</button>
-        </div>
-    </div>
-
-    <script>
-        function toggleChat() {
-            const win = document.getElementById('chat-window');
-            win.classList.toggle('hidden');
-            if (!win.classList.contains('hidden')) {
-                document.getElementById('chat-input').focus();
-            }
-        }
-
-        function handleChatKeyPress(e) {
-            if (e.key === 'Enter') sendChatMessage();
-        }
-
-        async function sendChatMessage() {
-            const input = document.getElementById('chat-input');
-            const msg = input.value.trim();
-            if (!msg) return;
-
-            addMessage(msg, 'user');
-            input.value = '';
-
-            // Loading indicator
-            const loadingId = addMessage('생각 중...', 'ai', true);
-
-            try {
-                const res = await fetch('/api/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: msg })
-                });
-                const data = await res.json();
-
-                // Remove loading and add response
-                document.getElementById(loadingId).remove();
-                addMessage(data.response || '오류가 발생했습니다.', 'ai');
-            } catch (e) {
-                document.getElementById(loadingId).remove();
-                addMessage('서버 연결 오류', 'ai');
-            }
-        }
-
-        function addMessage(text, sender, isLoading = false) {
-            const list = document.getElementById('chat-messages');
-            const div = document.createElement('div');
-            div.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
-
-            const bubble = document.createElement('div');
-            bubble.className = sender === 'user'
-                ? 'bg-blue-600 text-white p-2 rounded-lg rounded-tr-none shadow-sm max-w-[80%]'
-                : 'bg-white border text-gray-800 p-2 rounded-lg rounded-tl-none shadow-sm max-w-[80%]';
-
-            if (isLoading) {
-                bubble.id = 'chat-loading-' + Date.now();
-                bubble.classList.add('animate-pulse');
-            }
-
-            bubble.textContent = text;
-            div.appendChild(bubble);
-            list.appendChild(div);
-            list.scrollTop = list.scrollHeight;
-            return bubble.id;
-        }
     </script>
 </body>
 

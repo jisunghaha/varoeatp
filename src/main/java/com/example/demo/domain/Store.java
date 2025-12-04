@@ -8,12 +8,12 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Column;
 
 @Entity
-@Table(name = "stores")
+@Table(name = "baro_store")
 public class Store {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "store_id")
+    @Column(name = "id")
     private Long id;
 
     @Column(name = "store_name")
@@ -21,10 +21,10 @@ public class Store {
 
     private String address;
 
-    @Column(name = "latitude")
+    @Column(name = "lat")
     private Double lat;
 
-    @Column(name = "longitude")
+    @Column(name = "lng")
     private Double lng;
 
     // 👇 [추가] 2개 필드 추가
@@ -88,4 +88,33 @@ public class Store {
         return category;
     }
 
+    // --- Setters ---
+
+    public void setStoreName(String storeName) {
+        this.storeName = storeName;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public void setLat(Double lat) {
+        this.lat = lat;
+    }
+
+    public void setLng(Double lng) {
+        this.lng = lng;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public void setIsOpen(Boolean isOpen) {
+        this.isOpen = isOpen;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
 }

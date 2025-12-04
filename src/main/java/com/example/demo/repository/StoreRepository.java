@@ -8,5 +8,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface StoreRepository extends JpaRepository<Store, Long> {
-    // (지금은 이 안에 아무것도 적지 않아도 findAll() 기능은 작동합니다.)
+    java.util.Optional<Store> findByStoreName(String storeName);
 }

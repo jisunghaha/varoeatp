@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
+@Table(name = "baro_reservation_menus")
 @Getter
 @Setter
 @NoArgsConstructor

@@ -9,7 +9,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-@Table(name = "favorites", uniqueConstraints = {
+@Table(name = "baro_favorites", uniqueConstraints = {
         @UniqueConstraint(columnNames = { "user_id", "store_id" })
 })
 public class Favorite {
