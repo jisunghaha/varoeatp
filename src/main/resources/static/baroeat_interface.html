@@ -631,13 +631,41 @@
             if (!currentStoreId) return;
             const contentEl = document.getElementById('menu-category-content');
             try {
-                const response = await fetch(`/ api / stores / ${currentStoreId}/products`);
+                const response = await fetch(`/api/stores/${currentStoreId}/products`);
                 const products = await response.json();
-                contentEl.innerHTML = '<h3 class="text-2xl font-bold mb-4">메뉴</h3><div class="space-y-4">';
-                products.forEach(p => {
-                    contentEl.innerHTML += `<div class="flex justify-between items-center border-b pb-2"><div><h4 class="font-bold">${p.name}</h4><p class="text-sm text-gray-500">${p.description || ''}</p></div><span class="font-bold text-orange-600">${p.price.toLocaleString()}원</span></div>`;
-                });
-                contentEl.innerHTML += '</div>';
+
+// Group by category
+const grouped = {};
+products.forEach(p => {
+    const cat = p.category || '기타';
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push(p);
+});
+
+let html = '<h2 class="text-2xl font-bold mb-6 text-orange-600">메뉴</h2>';
+
+// Render by category
+for (const [category, items] of Object.entries(grouped)) {
+    html += `<h3 class="text-xl font-bold mt-6 mb-3 border-b-2 border-orange-200 pb-1">${category}</h3>`;
+    html += '<div class="space-y-4">';
+    items.forEach(p => {
+        html += `
+                            <div class="flex justify-between items-center border-b border-gray-100 pb-2 last:border-0">
+                                <div>
+                                    <h4 class="font-bold text-lg">${p.name}</h4>
+                                    <p class="text-sm text-gray-500">${p.description || ''}</p>
+                                </div>
+                                <span class="font-bold text-orange-600">${p.price.toLocaleString()}원</span>
+                            </div>`;
+    });
+    html += '</div>';
+}
+
+if (products.length === 0) {
+    html += '<p class="text-gray-500 text-center py-8">등록된 메뉴가 없습니다.</p>';
+}
+
+contentEl.innerHTML = html;
             } catch (e) { contentEl.innerHTML = '<p class="text-red-500">오류 발생.</p>'; }
         }
 

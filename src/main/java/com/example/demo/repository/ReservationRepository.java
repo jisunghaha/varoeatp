@@ -8,7 +8,7 @@ import java.time.LocalTime;
 import java.util.List;
 
 public interface ReservationRepository extends JpaRepository<Reservation, Long> {
-    
+
     // 특정 날짜와 시간에 예약된 특정 테이블의 수 계산
     int countByReservationDateAndReservationTimeAndStoreTable_Id(LocalDate date, LocalTime time, Long tableId);
 
@@ -17,4 +17,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
     // 사용자별 예약 내역 조회 (최신순)
     List<Reservation> findByUserOrderByIdDesc(com.example.demo.domain.User user);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query("DELETE FROM Reservation r WHERE r.user = :user")
+    void deleteByUser(@org.springframework.data.repository.query.Param("user") com.example.demo.domain.User user);
 }

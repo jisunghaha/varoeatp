@@ -14,4 +14,8 @@ public interface FavoriteRepository extends JpaRepository<Favorite, Long> {
     Optional<Favorite> findByUserAndStore(User user, Store store);
 
     List<Favorite> findByUser(User user);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query("DELETE FROM Favorite f WHERE f.user = :user")
+    void deleteByUser(@org.springframework.data.repository.query.Param("user") User user);
 }

@@ -23,7 +23,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         // 2. 찾아낸 유저 정보를 스프링 시큐리티가 이해할 수 있는 UserDetails 객체로 변환합니다.
         // (이 과정에서 DB에 저장된 암호화된 비밀번호가 스프링 시큐리티에 전달됩니다.)
         return org.springframework.security.core.userdetails.User.builder()
-                .username(user.getEmail()) // 인증 식별자로 email 사용
+                .username(user.getUsername()) // 인증 식별자로 username 사용
                 .password(user.getPassword()) // DB에 저장된 암호화된 비밀번호
                 .roles("USER") // 권한 설정 (기본값 USER)
                 .build();

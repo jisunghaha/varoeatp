@@ -2,6 +2,10 @@ package com.example.demo.service;
 
 import com.example.demo.auth.RegisterRequest;
 import com.example.demo.domain.User;
+import com.example.demo.repository.FavoriteRepository;
+import com.example.demo.repository.ReservationMenuRepository;
+import com.example.demo.repository.ReservationRepository;
+import com.example.demo.repository.ReviewRepository;
 import com.example.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -15,6 +19,10 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ReservationRepository reservationRepository;
+    private final ReviewRepository reviewRepository;
+    private final FavoriteRepository favoriteRepository;
+    private final ReservationMenuRepository reservationMenuRepository;
 
     /**
      * 회원가입 로직
@@ -54,13 +62,52 @@ public class UserService {
             throw new RuntimeException("비밀번호가 일치하지 않습니다.");
         }
 
+        deleteRelatedEntities(user);
+
         // 4. 비밀번호가 일치하면 사용자 삭제
         userRepository.delete(user);
     }
 
     @Transactional
+    public void deleteUserByUsername(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+        deleteRelatedEntities(user);
+
+        userRepository.delete(user);
+    }
+
+    private void deleteRelatedEntities(User user) {
+        // 1. Delete Reviews FIRST (because Review references Reservation)
+        reviewRepository.deleteByUser(user);
+
+        // 2. Delete Favorites
+        favoriteRepository.deleteByUser(user);
+
+        // 3. Delete Reservation Menus (Cascade doesn't work with JPQL delete)
+        reservationMenuRepository.deleteByReservationUser(user);
+
+        // 4. Delete Reservations
+        reservationRepository.deleteByUser(user);
+    }
+
+    @Transactional
     public void updateProfile(String email, String nickname, String preferredFood) {
         User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+        if (nickname != null && !nickname.isEmpty()) {
+            user.setNickname(nickname);
+        }
+        if (preferredFood != null && !preferredFood.isEmpty()) {
+            user.setPreferredFood(preferredFood);
+        }
+    }
+
+    @Transactional
+    public void updateProfileByUsername(String username, String nickname, String preferredFood) {
+        User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
         if (nickname != null && !nickname.isEmpty()) {
