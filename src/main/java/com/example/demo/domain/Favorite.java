@@ -10,6 +10,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Table(name = "baro_favorites", uniqueConstraints = {
+        // 중복 방지로직
         @UniqueConstraint(columnNames = { "user_id", "store_id" })
 })
 public class Favorite {

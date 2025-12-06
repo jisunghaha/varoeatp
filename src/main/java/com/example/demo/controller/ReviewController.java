@@ -7,8 +7,9 @@ import com.example.demo.domain.User;
 import com.example.demo.repository.ReservationRepository;
 import com.example.demo.repository.ReviewRepository;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.repository.StoreRepository;
 import lombok.Data;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -16,44 +17,37 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
+import java.security.Principal;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/reviews")
+@RequiredArgsConstructor
 public class ReviewController {
 
-    @Autowired
-    private ReviewRepository reviewRepository;
+    private final ReviewRepository reviewRepository;
+    private final UserRepository userRepository;
+    private final ReservationRepository reservationRepository;
+    private final StoreRepository storeRepository;
 
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private ReservationRepository reservationRepository;
-
-    @Autowired
-    private com.example.demo.repository.StoreRepository storeRepository;
-
-    private String getEmailFromAuthentication(Authentication authentication) {
+    private String getUserIdentifier(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
             return null;
         }
         Object principal = authentication.getPrincipal();
         if (principal instanceof OAuth2User) {
             OAuth2User oauth2User = (OAuth2User) principal;
-            String email = oauth2User.getAttribute("email");
-            if (email == null) {
-                Map<String, Object> kakaoAccount = oauth2User.getAttribute("kakao_account");
-                if (kakaoAccount != null) {
-                    email = (String) kakaoAccount.get("email");
-                }
+            // Kakao ID 추출 (CustomOAuth2UserService 로직과 일치)
+            Object id = oauth2User.getAttribute("id");
+            if (id != null) {
+                return id.toString() + "_kakao";
             }
-            return email;
+            return oauth2User.getName();
         } else if (principal instanceof UserDetails) {
             return ((UserDetails) principal).getUsername();
+        } else if (principal instanceof Principal) {
+            return ((Principal) principal).getName();
         } else if (principal instanceof String) {
             return (String) principal;
         }
@@ -70,13 +64,14 @@ public class ReviewController {
     @PostMapping
     public ResponseEntity<String> createReview(@RequestBody ReviewRequestDto request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = getEmailFromAuthentication(authentication);
+        String username = getUserIdentifier(authentication);
 
-        if (email == null || email.equals("anonymousUser")) {
+        if (username == null || username.equals("anonymousUser")) {
             return ResponseEntity.status(401).body("로그인이 필요합니다.");
         }
 
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmail(username)
+                .or(() -> userRepository.findByUsername(username))
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
         Store store = null;
@@ -91,13 +86,6 @@ public class ReviewController {
                 return ResponseEntity.status(403).body("본인의 예약에 대해서만 리뷰를 작성할 수 있습니다.");
             }
             store = reservation.getStore();
-
-            // 예약 시간 체크 (선택사항: 필요 없다면 주석 처리)
-            // LocalDateTime availableTime =
-            // LocalDateTime.of(reservation.getReservationDate(),
-            // reservation.getReservationTime()).plusMinutes(90);
-            // if (LocalDateTime.now().isBefore(availableTime)) return
-            // ResponseEntity.status(400).body("식사 후 리뷰를 작성해주세요.");
 
         }
         // 2. 매장 직접 선택 리뷰 (예약 없이)
@@ -137,7 +125,7 @@ public class ReviewController {
         public ReviewDto(Review review) {
             this.id = review.getId();
             this.userName = review.getUser().getNickname() != null ? review.getUser().getNickname()
-                    : review.getUser().getEmail();
+                    : review.getUser().getUsername(); // Fallback to username instead of email
             this.storeName = review.getStore() != null ? review.getStore().getStoreName() : "일반";
             this.content = review.getContent();
             this.imageUrl = review.getImageUrl();

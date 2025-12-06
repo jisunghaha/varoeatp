@@ -7,16 +7,37 @@
 [INFO] 
 [INFO] --- clean:3.3.2:clean (default-clean) @ baroeatp ---
 [INFO] Deleting C:\Users\tlsgp\Documents\GitHub\varoeatp-1\target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ baroeatp ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 2 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ baroeatp ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 44 source files with javac [debug release 17] to target\classes
+[INFO] /C:/Users/tlsgp/Documents/GitHub/varoeatp-1/src/main/java/com/example/demo/service/CustomOAuth2UserService.java: C:\Users\tlsgp\Documents\GitHub\varoeatp-1\src\main\java\com\example\demo\service\CustomOAuth2UserService.java uses unchecked or unsafe operations.
+[INFO] /C:/Users/tlsgp/Documents/GitHub/varoeatp-1/src/main/java/com/example/demo/service/CustomOAuth2UserService.java: Recompile with -Xlint:unchecked for details.
+[INFO] Some messages have been simplified; recompile with -Xdiags:verbose to get full output
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /C:/Users/tlsgp/Documents/GitHub/varoeatp-1/src/main/java/com/example/demo/FavoritesAndReviewsTestRunner.java:[61,26] incompatible types: java.lang.String cannot be converted to java.lang.Double
+[ERROR] /C:/Users/tlsgp/Documents/GitHub/varoeatp-1/src/main/java/com/example/demo/FavoritesAndReviewsTestRunner.java:[62,26] incompatible types: java.lang.String cannot be converted to java.lang.Double
+[INFO] 2 errors 
+[INFO] -------------------------------------------------------------
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD FAILURE
 [INFO] ------------------------------------------------------------------------
-[INFO] Total time:  1.741 s
-[INFO] Finished at: 2025-12-02T21:10:14+09:00
+[INFO] Total time:  2.514 s
+[INFO] Finished at: 2025-12-06T13:35:19+09:00
 [INFO] ------------------------------------------------------------------------
-[ERROR] Failed to execute goal org.apache.maven.plugins:maven-clean-plugin:3.3.2:clean (default-clean) on project baroeatp: Failed to clean project: Failed to delete C:\Users\tlsgp\Documents\GitHub\varoeatp-1\target\baroeatp-0.0.1-SNAPSHOT.jar -> [Help 1]
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.11.0:compile (default-compile) on project baroeatp: Compilation failure: Compilation failure: 
+[ERROR] /C:/Users/tlsgp/Documents/GitHub/varoeatp-1/src/main/java/com/example/demo/FavoritesAndReviewsTestRunner.java:[61,26] incompatible types: java.lang.String cannot be converted to java.lang.Double
+[ERROR] /C:/Users/tlsgp/Documents/GitHub/varoeatp-1/src/main/java/com/example/demo/FavoritesAndReviewsTestRunner.java:[62,26] incompatible types: java.lang.String cannot be converted to java.lang.Double
+[ERROR] -> [Help 1]
 [ERROR] 
 [ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
 [ERROR] Re-run Maven using the -X switch to enable full debug logging.
 [ERROR] 
 [ERROR] For more information about the errors and possible solutions, please read the following articles:
-[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
